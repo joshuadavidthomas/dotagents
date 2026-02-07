@@ -34,18 +34,18 @@ describe("writer", () => {
   describe("addSkillToConfig", () => {
     it("adds a skill with source only", async () => {
       await addSkillToConfig(configPath, "pdf", {
-        source: "github:anthropics/skills/pdf",
+        source: "anthropics/skills",
       });
 
       const config = await loadConfig(configPath);
       expect(config.skills["pdf"]?.source).toBe(
-        "github:anthropics/skills/pdf",
+        "anthropics/skills",
       );
     });
 
     it("adds a skill with source and ref", async () => {
       await addSkillToConfig(configPath, "pdf", {
-        source: "github:anthropics/skills/pdf",
+        source: "anthropics/skills",
         ref: "v1.0.0",
       });
 
@@ -69,10 +69,10 @@ describe("writer", () => {
 
     it("adds multiple skills", async () => {
       await addSkillToConfig(configPath, "a", {
-        source: "github:org/repo/a",
+        source: "org/repo-a",
       });
       await addSkillToConfig(configPath, "b", {
-        source: "github:org/repo/b",
+        source: "org/repo-b",
       });
 
       const config = await loadConfig(configPath);
@@ -83,7 +83,7 @@ describe("writer", () => {
   describe("removeSkillFromConfig", () => {
     it("removes an existing skill", async () => {
       await addSkillToConfig(configPath, "pdf", {
-        source: "github:anthropics/skills/pdf",
+        source: "anthropics/skills",
         ref: "v1.0.0",
       });
       await removeSkillFromConfig(configPath, "pdf");
@@ -94,16 +94,16 @@ describe("writer", () => {
 
     it("preserves other skills when removing one", async () => {
       await addSkillToConfig(configPath, "a", {
-        source: "github:org/repo/a",
+        source: "org/repo-a",
       });
       await addSkillToConfig(configPath, "b", {
-        source: "github:org/repo/b",
+        source: "org/repo-b",
       });
       await removeSkillFromConfig(configPath, "a");
 
       const config = await loadConfig(configPath);
       expect(config.skills["a"]).toBeUndefined();
-      expect(config.skills["b"]?.source).toBe("github:org/repo/b");
+      expect(config.skills["b"]?.source).toBe("org/repo-b");
     });
 
     it("is a no-op for non-existent skill", async () => {

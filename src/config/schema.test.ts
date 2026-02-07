@@ -3,9 +3,7 @@ import { agentsConfigSchema } from "./schema.js";
 
 describe("agentsConfigSchema", () => {
   it("parses a minimal valid config", () => {
-    const result = agentsConfigSchema.safeParse({
-      version: 1,
-    });
+    const result = agentsConfigSchema.safeParse({ version: 1 });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.version).toBe(1);
@@ -20,7 +18,7 @@ describe("agentsConfigSchema", () => {
       symlinks: { targets: [".claude", ".cursor"] },
       skills: {
         "pdf-processing": {
-          source: "github:anthropics/skills/pdf-processing",
+          source: "anthropics/skills",
           ref: "v1.0.0",
         },
         "my-skill": {
@@ -37,13 +35,11 @@ describe("agentsConfigSchema", () => {
   });
 
   it("rejects invalid version", () => {
-    const result = agentsConfigSchema.safeParse({ version: 2 });
-    expect(result.success).toBe(false);
+    expect(agentsConfigSchema.safeParse({ version: 2 }).success).toBe(false);
   });
 
   it("rejects missing version", () => {
-    const result = agentsConfigSchema.safeParse({});
-    expect(result.success).toBe(false);
+    expect(agentsConfigSchema.safeParse({}).success).toBe(false);
   });
 
   describe("source specifiers", () => {
@@ -53,16 +49,16 @@ describe("agentsConfigSchema", () => {
         skills: { test: { source } },
       });
 
-    it("accepts github: source", () => {
-      expect(parseSkill("github:anthropics/skills/pdf").success).toBe(true);
+    it("accepts owner/repo", () => {
+      expect(parseSkill("anthropics/skills").success).toBe(true);
     });
 
-    it("accepts github: source with two parts", () => {
-      expect(parseSkill("github:owner/repo").success).toBe(true);
+    it("accepts owner/repo@ref", () => {
+      expect(parseSkill("anthropics/skills@v1.0.0").success).toBe(true);
     });
 
-    it("rejects github: with only one part", () => {
-      expect(parseSkill("github:onlyowner").success).toBe(false);
+    it("accepts owner/repo@sha", () => {
+      expect(parseSkill("anthropics/skills@abc123").success).toBe(true);
     });
 
     it("accepts git: source", () => {
@@ -73,16 +69,20 @@ describe("agentsConfigSchema", () => {
       expect(parseSkill("path:../relative/dir").success).toBe(true);
     });
 
-    it("accepts @scope/name source", () => {
-      expect(parseSkill("@anthropics/pdf-processing").success).toBe(true);
-    });
-
-    it("rejects bare name without prefix", () => {
+    it("rejects bare name without slash", () => {
       expect(parseSkill("just-a-name").success).toBe(false);
     });
 
-    it("rejects @scope without name", () => {
-      expect(parseSkill("@anthropics").success).toBe(false);
+    it("rejects owner starting with dash", () => {
+      expect(parseSkill("-bad/repo").success).toBe(false);
+    });
+
+    it("rejects repo starting with dash", () => {
+      expect(parseSkill("owner/-bad").success).toBe(false);
+    });
+
+    it("rejects three-part path (not a valid format)", () => {
+      expect(parseSkill("a/b/c").success).toBe(false);
     });
   });
 });

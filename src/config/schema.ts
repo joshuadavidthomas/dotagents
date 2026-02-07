@@ -1,25 +1,22 @@
 import { z } from "zod/v4";
 
 /**
- * Source specifier patterns:
- *   github:owner/repo/path
- *   git:https://example.com/repo.git
- *   path:../relative/path
- *   @scope/name
+ * Source specifier patterns (inferred from value):
+ *   owner/repo          -- GitHub
+ *   owner/repo@ref      -- GitHub pinned
+ *   git:https://...     -- non-GitHub git
+ *   path:../relative    -- local filesystem
  */
-const skillSourceSchema = z.union([
-  z.string().check(
-    z.refine((s) => s.startsWith("github:")),
-    z.refine((s) => {
-      const rest = s.slice("github:".length);
-      const parts = rest.split("/");
-      return parts.length >= 2 && parts.every((p) => p.length > 0);
-    }),
-  ),
-  z.string().check(z.refine((s) => s.startsWith("git:"))),
-  z.string().check(z.refine((s) => s.startsWith("path:"))),
-  z.string().check(z.refine((s) => /^@[\w-]+\/[\w-]+$/.test(s))),
-]);
+const skillSourceSchema = z.string().check(
+  z.refine((s) => {
+    if (s.startsWith("git:")) return true;
+    if (s.startsWith("path:")) return true;
+    // owner/repo or owner/repo@ref
+    const base = s.includes("@") ? s.slice(0, s.indexOf("@")) : s;
+    const parts = base.split("/");
+    return parts.length === 2 && parts.every((p) => p.length > 0 && !p.startsWith("-"));
+  }, "Must be owner/repo, owner/repo@ref, git:<url>, or path:<relative>"),
+);
 
 export type SkillSource = z.infer<typeof skillSourceSchema>;
 

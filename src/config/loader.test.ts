@@ -22,14 +22,14 @@ describe("loadConfig", () => {
       `version = 1
 
 [skills.pdf]
-source = "github:anthropics/skills/pdf"
+source = "anthropics/skills"
 ref = "v1.0.0"
 `,
     );
 
     const config = await loadConfig(configPath);
     expect(config.version).toBe(1);
-    expect(config.skills["pdf"]?.source).toBe("github:anthropics/skills/pdf");
+    expect(config.skills["pdf"]?.source).toBe("anthropics/skills");
     expect(config.skills["pdf"]?.ref).toBe("v1.0.0");
   });
 

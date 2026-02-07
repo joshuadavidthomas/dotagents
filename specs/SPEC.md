@@ -39,19 +39,14 @@ targets = [".claude", ".cursor"] # Creates <target>/skills/ -> .agents/skills/
 # Each skill is a TOML table keyed by the skill name.
 
 [skills.pdf-processing]
-source = "github:anthropics/skills/pdf-processing"
+source = "anthropics/skills"
 ref = "v1.2.0"
 
 [skills.find-bugs]
-source = "github:getsentry/sentry-skills/find-bugs"
-ref = "main"
-
-[skills.code-review]
-source = "@anthropics/code-review"
+source = "getsentry/sentry-skills@main"
 
 [skills.internal-review]
 source = "git:https://git.corp.example.com/team/skills.git"
-path = "internal-review"
 ref = "v2.0.0"
 
 [skills.my-custom-skill]
@@ -85,54 +80,70 @@ source = "path:../shared-skills/my-custom-skill"
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `source` | Yes | Skill source specifier (see Source Types below). |
-| `ref` | No | Git ref to pin to (tag, branch, or commit SHA). Defaults to the repo's default branch. |
-| `path` | No | Subdirectory within the git repo containing the skill. Only needed for `git:` sources where the URL doesn't encode the path. |
+| `source` | Yes | Skill source. `owner/repo` for GitHub, `owner/repo@ref` for pinned, `git:<url>` for non-GitHub, `path:<relative>` for local. |
+| `ref` | No | Git ref (tag, branch, or SHA). Can also be specified inline as `owner/repo@ref`. Defaults to repo's default branch. |
+| `path` | No | Explicit subdirectory path to the skill within the repo. Only needed when automatic discovery fails. |
 
 ### Source Types
 
-#### `github:<owner>/<repo>/<skill-path>`
+The source format is inferred from the value. No prefix needed for GitHub repos.
 
-GitHub shorthand. Resolves to `https://github.com/<owner>/<repo>.git` with skill located at `<skill-path>/`.
+#### `owner/repo` -- GitHub (most common)
+
+Resolves to `https://github.com/<owner>/<repo>.git`. The skill is discovered by scanning the repo for SKILL.md files matching the skill name.
 
 ```toml
-source = "github:anthropics/skills/pdf-processing"
+[skills.pdf-processing]
+source = "anthropics/skills"
 # -> clone https://github.com/anthropics/skills.git
-# -> use pdf-processing/ subdirectory
+# -> discover skill named "pdf-processing" in conventional directories
+
+[skills.find-bugs]
+source = "getsentry/sentry-skills"
+ref = "v1.0.0"
+# -> clone, checkout v1.0.0, discover "find-bugs"
 ```
 
-#### `git:<url>`
+Ref pinning can also be inline: `source = "anthropics/skills@v1.0.0"`
 
-Full git URL. Use `path` field to specify subdirectory.
+#### Skill discovery within a repo
+
+After cloning, dotagents scans these directories (in order) for a skill matching the name:
+
+1. `<name>/SKILL.md` (root-level skill directory)
+2. `skills/<name>/SKILL.md`
+3. `.agents/skills/<name>/SKILL.md`
+4. `.claude/skills/<name>/SKILL.md`
+5. Marketplace format: `.claude-plugin/marketplace.json` -> `plugins/*/skills/<name>/SKILL.md`
+
+If discovery fails, the `path` field can be used as an explicit override:
 
 ```toml
+[skills.my-skill]
+source = "myorg/monorepo"
+path = "tools/agent-skills/my-skill"
+```
+
+#### `git:<url>` -- non-GitHub git
+
+For self-hosted GitLab, corporate git servers, etc. Same discovery logic applies.
+
+```toml
+[skills.internal-review]
 source = "git:https://git.corp.example.com/team/skills.git"
-path = "my-skill"
 ref = "main"
 ```
 
-#### `path:<relative-path>`
+#### `path:<relative-path>` -- local filesystem
 
-Local filesystem path, relative to the project root (where `agents.toml` lives).
+Relative to the project root. Copied (not symlinked) into `.agents/skills/` during install.
 
 ```toml
+[skills.my-custom-skill]
 source = "path:../shared-skills/my-custom-skill"
 ```
 
-Local path skills are copied (not symlinked) into `.agents/skills/` during install. They have an integrity hash in the lockfile but no git commit. `dotagents install` re-copies if the source content has changed.
-
-#### `@<scope>/<name>`
-
-Registry-style shorthand. Resolves using the following algorithm:
-
-1. Try `https://github.com/<scope>/skills.git`, look for a `<name>/SKILL.md` subdirectory
-2. If not found, try `https://github.com/<scope>/<name>.git` (dedicated skill repo)
-
-```toml
-source = "@anthropics/code-review"
-# -> tries https://github.com/anthropics/skills.git, subdirectory code-review/
-# -> falls back to https://github.com/anthropics/code-review.git
-```
+Local path skills have an integrity hash in the lockfile but no git commit. Re-copied if source content changes.
 
 ---
 
@@ -149,7 +160,7 @@ The lockfile. Lives at the project root alongside `agents.toml`. TOML format.
 version = 1
 
 [skills.pdf-processing]
-source = "github:anthropics/skills/pdf-processing"
+source = "anthropics/skills"
 resolved_url = "https://github.com/anthropics/skills.git"
 resolved_path = "pdf-processing"
 resolved_ref = "v1.2.0"
@@ -157,7 +168,7 @@ commit = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
 integrity = "sha256-Kx3bXjQ9mFpLw7rN8vYzTg=="
 
 [skills.find-bugs]
-source = "github:getsentry/sentry-skills/find-bugs"
+source = "getsentry/sentry-skills@main"
 resolved_url = "https://github.com/getsentry/sentry-skills.git"
 resolved_path = "find-bugs"
 resolved_ref = "main"
@@ -259,8 +270,8 @@ dotagents add <specifier> [--ref <ref>] [--name <name>]
 
 **Examples:**
 ```bash
-dotagents add @anthropics/pdf-processing
-dotagents add github:getsentry/sentry-skills/find-bugs --ref v1.0.0
+dotagents add anthropics/skills              # interactive: pick from discovered skills
+dotagents add getsentry/sentry-skills --ref v1.0.0
 dotagents add path:../shared-skills/my-skill
 ```
 
@@ -343,25 +354,38 @@ How dotagents resolves a specifier to a concrete skill directory.
 ### Resolution Flow
 
 ```
-Specifier
+Source string
   |
-  ├─ "path:..."     -> Resolve relative to project root
-  ├─ "git:..."      -> Parse URL, use `path` field for subdirectory
-  ├─ "github:..."   -> Parse owner/repo/path, construct git URL
-  └─ "@scope/name"  -> Try github:scope/skills/name, then github:scope/name
+  ├─ starts with "path:" -> Resolve relative to project root
+  ├─ starts with "git:"  -> Parse URL, clone, discover skill by name
+  └─ otherwise           -> Parse as owner/repo[@ref], clone from GitHub, discover skill by name
         |
         v
-  Clone/fetch git repo (or resolve local path)
+  Clone/fetch repo to cache (~/.local/dotagents/owner/repo/ or owner/repo@sha/)
         |
         v
-  Locate SKILL.md in resolved directory
+  Discover skill: scan conventional directories for SKILL.md matching skill name
+  (or use explicit `path` field if discovery fails)
         |
         v
-  Parse YAML frontmatter, validate name field
+  Parse YAML frontmatter, validate
         |
         v
-  Return ResolvedSkill { url, path, ref, commit, name, metadata }
+  Copy skill directory to .agents/skills/<name>/
 ```
+
+### Caching
+
+Cache location: `~/.local/dotagents/` (overridable via `DOTAGENTS_STATE_DIR`)
+
+Structure:
+- `owner/repo/` -- unpinned (refreshed per TTL, default 24h)
+- `owner/repo@sha/` -- pinned (immutable, never refreshed)
+
+Git operations:
+- Initial: `git clone --depth=1`
+- Update (unpinned): `git fetch --depth=1 origin && git reset --hard origin/HEAD`
+- Pinned: `git fetch --depth=1 origin <sha> && git checkout <sha>` (unshallow fallback if needed)
 
 ### Skill Validation
 
