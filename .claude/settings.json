@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(pwd:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(bun:*)",
+      "Bash(dex list:*)",
+      "Bash(dex show:*)",
+      "Bash(dex create:*)",
+      "Bash(dex complete:*)",
+      "Bash(dex edit:*)",
+      "Bash(dex delete:*)"
+    ],
+    "deny": []
+  }
+}
