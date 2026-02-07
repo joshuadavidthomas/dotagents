@@ -1,0 +1,128 @@
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { runList } from "./list.js";
+import { writeLockfile } from "../../lockfile/writer.js";
+import { hashDirectory } from "../../utils/hash.js";
+
+const SKILL_MD = (name: string) => `---
+name: ${name}
+description: Test skill ${name}
+---
+`;
+
+describe("runList", () => {
+  let tmpDir: string;
+  let projectRoot: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), "dotagents-list-"));
+    projectRoot = join(tmpDir, "project");
+    await mkdir(join(projectRoot, ".agents", "skills"), { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true });
+  });
+
+  it("returns empty array when no skills declared", async () => {
+    await writeFile(
+      join(projectRoot, "agents.toml"),
+      "version = 1\n\n[skills]\n",
+    );
+    const results = await runList({ projectRoot });
+    expect(results).toHaveLength(0);
+  });
+
+  it("reports missing skill when not installed", async () => {
+    await writeFile(
+      join(projectRoot, "agents.toml"),
+      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+    );
+    const results = await runList({ projectRoot });
+    expect(results).toHaveLength(1);
+    expect(results[0]!.status).toBe("missing");
+  });
+
+  it("reports unlocked skill when no lockfile", async () => {
+    await writeFile(
+      join(projectRoot, "agents.toml"),
+      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+    );
+    // Install the skill directory but no lockfile
+    const skillDir = join(projectRoot, ".agents", "skills", "pdf");
+    await mkdir(skillDir, { recursive: true });
+    await writeFile(join(skillDir, "SKILL.md"), SKILL_MD("pdf"));
+
+    const results = await runList({ projectRoot });
+    expect(results).toHaveLength(1);
+    expect(results[0]!.status).toBe("unlocked");
+  });
+
+  it("reports ok when integrity matches", async () => {
+    await writeFile(
+      join(projectRoot, "agents.toml"),
+      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+    );
+    const skillDir = join(projectRoot, ".agents", "skills", "pdf");
+    await mkdir(skillDir, { recursive: true });
+    await writeFile(join(skillDir, "SKILL.md"), SKILL_MD("pdf"));
+
+    const integrity = await hashDirectory(skillDir);
+    await writeLockfile(join(projectRoot, "agents.lock"), {
+      version: 1,
+      skills: {
+        pdf: {
+          source: "org/repo",
+          resolved_url: "https://github.com/org/repo.git",
+          resolved_path: "pdf",
+          commit: "a".repeat(40),
+          integrity,
+        },
+      },
+    });
+
+    const results = await runList({ projectRoot });
+    expect(results).toHaveLength(1);
+    expect(results[0]!.status).toBe("ok");
+    expect(results[0]!.commit).toBe("aaaaaaaa");
+  });
+
+  it("reports modified when integrity differs", async () => {
+    await writeFile(
+      join(projectRoot, "agents.toml"),
+      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+    );
+    const skillDir = join(projectRoot, ".agents", "skills", "pdf");
+    await mkdir(skillDir, { recursive: true });
+    await writeFile(join(skillDir, "SKILL.md"), SKILL_MD("pdf"));
+
+    await writeLockfile(join(projectRoot, "agents.lock"), {
+      version: 1,
+      skills: {
+        pdf: {
+          source: "org/repo",
+          resolved_url: "https://github.com/org/repo.git",
+          resolved_path: "pdf",
+          commit: "a".repeat(40),
+          integrity: "sha256-stale",
+        },
+      },
+    });
+
+    const results = await runList({ projectRoot });
+    expect(results).toHaveLength(1);
+    expect(results[0]!.status).toBe("modified");
+  });
+
+  it("sorts results by name", async () => {
+    await writeFile(
+      join(projectRoot, "agents.toml"),
+      `version = 1\n\n[skills.z-skill]\nsource = "org/z"\n\n[skills.a-skill]\nsource = "org/a"\n`,
+    );
+    const results = await runList({ projectRoot });
+    expect(results[0]!.name).toBe("a-skill");
+    expect(results[1]!.name).toBe("z-skill");
+  });
+});
