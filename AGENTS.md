@@ -38,6 +38,13 @@ src/
 └── utils/                # exec.ts, hash.ts, fs.ts
 ```
 
+## Principles
+
+- **Fight entropy.** Leave the codebase better than you found it.
+- **Prefer simpler solutions** where it reasonably makes sense. Three lines of straightforward code beats an abstraction.
+- **Minimal dependencies.** Reach for the standard library first.
+- **Early returns, fail fast.** Guard clauses over nested conditionals.
+
 ## Key Conventions
 
 - TypeScript strict mode
@@ -50,10 +57,12 @@ src/
 
 ## Testing
 
+New functionality requires tests, but only tests that are functionally additive. Don't write tests for the sake of testing. A test should exist because it catches a real bug or verifies a meaningful behavior, not to hit a coverage number.
+
 - Co-locate tests with source (`foo.ts` -> `foo.test.ts`)
-- Mock external services, use real-world fixtures
 - Prefer integration tests over unit tests
 - Add regression tests for bugs
+- Mock external services, use real-world fixtures
 
 ## Verifying Changes
 
