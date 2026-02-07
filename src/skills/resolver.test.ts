@@ -1,0 +1,42 @@
+import { describe, it, expect } from "vitest";
+import { parseSource } from "./resolver.js";
+
+describe("parseSource", () => {
+  it("parses owner/repo as github", () => {
+    const result = parseSource("anthropics/skills");
+    expect(result.type).toBe("github");
+    expect(result.owner).toBe("anthropics");
+    expect(result.repo).toBe("skills");
+    expect(result.url).toBe("https://github.com/anthropics/skills.git");
+    expect(result.ref).toBeUndefined();
+  });
+
+  it("parses owner/repo@ref as github with ref", () => {
+    const result = parseSource("getsentry/sentry-skills@v1.0.0");
+    expect(result.type).toBe("github");
+    expect(result.owner).toBe("getsentry");
+    expect(result.repo).toBe("sentry-skills");
+    expect(result.ref).toBe("v1.0.0");
+    expect(result.url).toBe(
+      "https://github.com/getsentry/sentry-skills.git",
+    );
+  });
+
+  it("parses owner/repo@sha as github with sha ref", () => {
+    const result = parseSource("anthropics/skills@abc123");
+    expect(result.type).toBe("github");
+    expect(result.ref).toBe("abc123");
+  });
+
+  it("parses git: prefix as generic git", () => {
+    const result = parseSource("git:https://git.corp.example.com/team/skills.git");
+    expect(result.type).toBe("git");
+    expect(result.url).toBe("https://git.corp.example.com/team/skills.git");
+  });
+
+  it("parses path: prefix as local", () => {
+    const result = parseSource("path:../shared/my-skill");
+    expect(result.type).toBe("local");
+    expect(result.path).toBe("../shared/my-skill");
+  });
+});

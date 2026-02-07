@@ -8,3 +8,10 @@ export type {
 } from "./config/index.js";
 export { writeAgentsGitignore } from "./gitignore/index.js";
 export { ensureSkillsSymlink, verifySymlinks } from "./symlinks/index.js";
+export { exec, ExecError, hashDirectory, sha256, copyDir } from "./utils/index.js";
+export { clone, fetchAndReset, fetchRef, headCommit, isGitRepo, GitError, ensureCached, resolveLocalSource, LocalSourceError } from "./sources/index.js";
+export type { CacheResult } from "./sources/index.js";
+export { loadSkillMd, SkillLoadError, discoverSkill, discoverAllSkills, resolveSkill, parseSource, ResolveError } from "./skills/index.js";
+export type { SkillMeta, DiscoveredSkill, ResolvedSkill, ResolvedGitSkill, ResolvedLocalSkill } from "./skills/index.js";
+export { lockfileSchema, isGitLocked, loadLockfile, LockfileError, writeLockfile } from "./lockfile/index.js";
+export type { Lockfile, LockedSkill } from "./lockfile/index.js";
