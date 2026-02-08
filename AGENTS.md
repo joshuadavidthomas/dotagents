@@ -26,15 +26,14 @@ See `specs/SPEC.md` for the full design.
 src/
 ├── index.ts              # Library entry point
 ├── cli/
-│   ├── index.ts          # CLI entry (Bun compile target)
+│   ├── index.ts          # CLI entry point, command routing
 │   └── commands/         # init, install, add, remove, update, sync, list
 ├── config/               # agents.toml schema, loader, writer
-├── lockfile/             # agents.lock schema, resolver, writer
-├── skills/               # SKILL.md loader, resolver, installer
+├── lockfile/             # agents.lock schema, loader, writer
+├── skills/               # SKILL.md loader, discovery, resolver
 ├── sources/              # git.ts, local.ts, cache.ts
 ├── symlinks/             # Symlink creation/management
 ├── gitignore/            # .agents/.gitignore generation
-├── types/                # Shared type definitions
 └── utils/                # exec.ts, hash.ts, fs.ts
 ```
 
@@ -71,3 +70,13 @@ pnpm check
 ```
 
 Or individually: `pnpm lint && pnpm typecheck && pnpm test`
+
+## Before Creating a PR
+
+Run warden to check for bugs and code quality issues:
+
+```bash
+warden
+```
+
+The `warden-skill` is available in this project (installed via dotagents) and provides guidance on warden configuration and usage.
