@@ -4,16 +4,6 @@
 
 Use **pnpm**: `pnpm install`, `pnpm build`, `pnpm test`
 
-## Commit Attribution
-
-AI commits MUST include:
-
-```
-Co-Authored-By: <model name> <noreply@anthropic.com>
-```
-
-Example: `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
-
 ## What This Project Is
 
 dotagents is a package manager for `.agents` directories. It manages agent skill dependencies declared in `agents.toml`, maintains a lockfile for reproducibility, and handles symlinks so tools like Claude Code can discover skills from a single canonical location.
