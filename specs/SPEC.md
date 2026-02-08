@@ -35,20 +35,21 @@ name = "my-project"              # Optional. For display purposes.
 [symlinks]
 targets = [".claude", ".cursor"] # Creates <target>/skills/ -> .agents/skills/
 
-[skills]
-# Each skill is a TOML table keyed by the skill name.
-
-[skills.find-bugs]
+[[skills]]
+name = "find-bugs"
 source = "getsentry/skills"
 
-[skills.warden-skill]
+[[skills]]
+name = "warden-skill"
 source = "getsentry/warden"
 
-[skills.internal-review]
+[[skills]]
+name = "internal-review"
 source = "git:https://git.corp.example.com/team/skills.git"
 ref = "v2.0.0"
 
-[skills.my-custom-skill]
+[[skills]]
+name = "my-custom-skill"
 source = "path:../shared-skills/my-custom-skill"
 ```
 
@@ -61,7 +62,7 @@ source = "path:../shared-skills/my-custom-skill"
 | `version` | Yes | Schema version. Always `1`. |
 | `project` | No | Project metadata. |
 | `symlinks` | No | Symlink configuration. |
-| `skills` | No | Skill dependencies (empty table if no dependencies). |
+| `skills` | No | Skill dependencies (array of tables). |
 
 #### `[project]`
 
@@ -75,10 +76,11 @@ source = "path:../shared-skills/my-custom-skill"
 |-------|----------|-------------|
 | `targets` | No | Array of directories to symlink. Each gets a `skills/` subdirectory pointing to `.agents/skills/`. Defaults to `[]`. |
 
-#### `[skills.<name>]`
+#### `[[skills]]`
 
 | Field | Required | Description |
 |-------|----------|-------------|
+| `name` | Yes | Skill name. Must start with alphanumeric and contain only `[a-zA-Z0-9._-]`. |
 | `source` | Yes | Skill source. `owner/repo` for GitHub, `owner/repo@ref` for pinned, `git:<url>` for non-GitHub, `path:<relative>` for local. |
 | `ref` | No | Git ref (tag, branch, or SHA). Can also be specified inline as `owner/repo@ref`. Defaults to repo's default branch. |
 | `path` | No | Explicit subdirectory path to the skill within the repo. Only needed when automatic discovery fails. |
@@ -92,12 +94,14 @@ The source format is inferred from the value. No prefix needed for GitHub repos.
 Resolves to `https://github.com/<owner>/<repo>.git`. The skill is discovered by scanning the repo for SKILL.md files matching the skill name.
 
 ```toml
-[skills.find-bugs]
+[[skills]]
+name = "find-bugs"
 source = "getsentry/skills"
 # -> clone https://github.com/getsentry/skills.git
 # -> discover skill named "find-bugs" in conventional directories
 
-[skills.warden-skill]
+[[skills]]
+name = "warden-skill"
 source = "getsentry/warden"
 ref = "v1.0.0"
 # -> clone, checkout v1.0.0, discover "warden-skill"
@@ -118,7 +122,8 @@ After cloning, dotagents scans these locations (in order) for a skill matching t
 If discovery fails, the `path` field can be used as an explicit override:
 
 ```toml
-[skills.my-skill]
+[[skills]]
+name = "my-skill"
 source = "myorg/monorepo"
 path = "tools/agent-skills/my-skill"
 ```
@@ -128,7 +133,8 @@ path = "tools/agent-skills/my-skill"
 For self-hosted GitLab, corporate git servers, etc. Same discovery logic applies.
 
 ```toml
-[skills.internal-review]
+[[skills]]
+name = "internal-review"
 source = "git:https://git.corp.example.com/team/skills.git"
 ref = "main"
 ```
@@ -138,7 +144,8 @@ ref = "main"
 Relative to the project root. Copied (not symlinked) into `.agents/skills/` during install.
 
 ```toml
-[skills.my-custom-skill]
+[[skills]]
+name = "my-custom-skill"
 source = "path:../shared-skills/my-custom-skill"
 ```
 
@@ -222,7 +229,7 @@ dotagents init [--force]
 ```
 
 **Behavior:**
-1. Create `agents.toml` with `version = 1` and empty `[skills]` table
+1. Create `agents.toml` with `version = 1`
 2. Create `.agents/skills/` directory
 3. Generate `.agents/.gitignore`
 4. If symlink targets are configured, set up symlinks
@@ -280,7 +287,7 @@ dotagents add myorg/single-skill-repo   # auto-detects if repo has one skill
    - If `--name` is given, look for that specific skill
    - If repo has exactly one skill, use it automatically
    - If repo has multiple skills and no `--name`, list them and ask user to pick
-4. Add `[skills.<name>]` entry to `agents.toml`
+4. Add `[[skills]]` entry to `agents.toml`
 5. Run install to fetch and place the skill
 6. Update `agents.lock`
 
@@ -297,7 +304,7 @@ dotagents remove <name>
 ```
 
 **Behavior:**
-1. Remove `[skills.<name>]` from `agents.toml`
+1. Remove `[[skills]]` entry from `agents.toml`
 2. Delete `.agents/skills/<name>/`
 3. Remove entry from `agents.lock`
 4. Regenerate `.agents/.gitignore`

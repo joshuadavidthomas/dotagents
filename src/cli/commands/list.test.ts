@@ -29,7 +29,7 @@ describe("runList", () => {
   it("returns empty array when no skills declared", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      "version = 1\n\n[skills]\n",
+      "version = 1\n",
     );
     const results = await runList({ projectRoot });
     expect(results).toHaveLength(0);
@@ -38,7 +38,7 @@ describe("runList", () => {
   it("reports missing skill when not installed", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "org/repo"\n`,
     );
     const results = await runList({ projectRoot });
     expect(results).toHaveLength(1);
@@ -48,7 +48,7 @@ describe("runList", () => {
   it("reports unlocked skill when no lockfile", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "org/repo"\n`,
     );
     // Install the skill directory but no lockfile
     const skillDir = join(projectRoot, ".agents", "skills", "pdf");
@@ -63,7 +63,7 @@ describe("runList", () => {
   it("reports ok when integrity matches", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "org/repo"\n`,
     );
     const skillDir = join(projectRoot, ".agents", "skills", "pdf");
     await mkdir(skillDir, { recursive: true });
@@ -92,7 +92,7 @@ describe("runList", () => {
   it("reports modified when integrity differs", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "org/repo"\n`,
     );
     const skillDir = join(projectRoot, ".agents", "skills", "pdf");
     await mkdir(skillDir, { recursive: true });
@@ -119,7 +119,7 @@ describe("runList", () => {
   it("sorts results by name", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.z-skill]\nsource = "org/z"\n\n[skills.a-skill]\nsource = "org/a"\n`,
+      `version = 1\n\n[[skills]]\nname = "z-skill"\nsource = "org/z"\n\n[[skills]]\nname = "a-skill"\nsource = "org/a"\n`,
     );
     const results = await runList({ projectRoot });
     expect(results[0]!.name).toBe("a-skill");

@@ -33,7 +33,7 @@ export async function runSync(opts: SyncOptions): Promise<SyncResult> {
 
   const config = await loadConfig(configPath);
   const lockfile = await loadLockfile(lockPath);
-  const declaredNames = new Set(Object.keys(config.skills));
+  const declaredNames = new Set(config.skills.map((s) => s.name));
   const issues: SyncIssue[] = [];
 
   // 1. Regenerate .agents/.gitignore

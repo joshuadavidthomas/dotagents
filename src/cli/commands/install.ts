@@ -41,7 +41,7 @@ export async function runInstall(opts: InstallOptions): Promise<InstallResult> {
 
   // 1. Read config
   const config = await loadConfig(configPath);
-  const skillNames = Object.keys(config.skills);
+  const skillNames = config.skills.map((s) => s.name);
 
   if (skillNames.length === 0) {
     console.log(chalk.dim("No skills declared in agents.toml."));
@@ -75,7 +75,7 @@ export async function runInstall(opts: InstallOptions): Promise<InstallResult> {
   const skipped: string[] = [];
 
   for (const name of skillNames) {
-    const dep = config.skills[name]!;
+    const dep = config.skills.find((s) => s.name === name)!;
     const locked = lockfile?.skills[name];
 
     // If locked and not forced, use the locked commit

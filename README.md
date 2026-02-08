@@ -28,7 +28,8 @@ This creates an `agents.toml`:
 ```toml
 version = 1
 
-[skills.find-bugs]
+[[skills]]
+name = "find-bugs"
 source = "getsentry/skills"
 ```
 
@@ -49,16 +50,20 @@ And a lockfile (`agents.lock`) pinning the exact commit and integrity hash.
 ## Source Formats
 
 ```toml
-[skills.find-bugs]
+[[skills]]
+name = "find-bugs"
 source = "getsentry/skills"              # GitHub repo (auto-discover)
 
-[skills.review]
+[[skills]]
+name = "review"
 source = "getsentry/skills@v1.0.0"       # Pinned to a ref
 
-[skills.internal]
+[[skills]]
+name = "internal"
 source = "git:https://git.corp.dev/repo"  # Non-GitHub git
 
-[skills.local]
+[[skills]]
+name = "local"
 source = "path:./my-skills/local-skill"   # Local directory
 ```
 

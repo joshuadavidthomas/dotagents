@@ -27,12 +27,12 @@ export async function runList(opts: ListOptions): Promise<SkillStatus[]> {
 
   const config = await loadConfig(configPath);
   const lockfile = await loadLockfile(lockPath);
-  const skillNames = Object.keys(config.skills).sort();
+  const skillNames = config.skills.map((s) => s.name).sort();
 
   const results: SkillStatus[] = [];
 
   for (const name of skillNames) {
-    const dep = config.skills[name]!;
+    const dep = config.skills.find((s) => s.name === name)!;
     const locked = lockfile?.skills[name];
     const installed = join(skillsDir, name);
 

@@ -75,7 +75,7 @@ export function parseSource(source: string): {
  */
 export async function resolveSkill(
   skillName: string,
-  dep: SkillDependency,
+  dep: Pick<SkillDependency, "source" | "ref" | "path">,
   opts?: {
     projectRoot?: string;
     /** Locked commit from agents.lock — skip resolution, use this exact commit */

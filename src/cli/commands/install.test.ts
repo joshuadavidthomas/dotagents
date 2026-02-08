@@ -57,7 +57,7 @@ describe("runInstall", () => {
   it("installs a skill from a git source", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "git:${repoDir}"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "git:${repoDir}"\n`,
     );
 
     const result = await runInstall({ projectRoot });
@@ -71,7 +71,7 @@ describe("runInstall", () => {
   it("creates agents.lock after install", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "git:${repoDir}"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "git:${repoDir}"\n`,
     );
 
     await runInstall({ projectRoot });
@@ -85,7 +85,7 @@ describe("runInstall", () => {
   it("installs multiple skills", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "git:${repoDir}"\n\n[skills.review]\nsource = "git:${repoDir}"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "git:${repoDir}"\n\n[[skills]]\nname = "review"\nsource = "git:${repoDir}"\n`,
     );
 
     const result = await runInstall({ projectRoot });
@@ -97,7 +97,7 @@ describe("runInstall", () => {
   it("regenerates .agents/.gitignore", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "git:${repoDir}"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "git:${repoDir}"\n`,
     );
 
     await runInstall({ projectRoot });
@@ -113,7 +113,7 @@ describe("runInstall", () => {
   it("handles empty skills list", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      "version = 1\n\n[skills]\n",
+      "version = 1\n",
     );
 
     const result = await runInstall({ projectRoot });
@@ -123,7 +123,7 @@ describe("runInstall", () => {
   it("fails with --frozen when no lockfile exists", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "git:${repoDir}"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "git:${repoDir}"\n`,
     );
 
     await expect(
@@ -134,7 +134,7 @@ describe("runInstall", () => {
   it("frozen mode passes when lockfile matches", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "git:${repoDir}"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "git:${repoDir}"\n`,
     );
 
     // First install to create lockfile

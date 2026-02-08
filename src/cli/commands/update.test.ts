@@ -49,7 +49,7 @@ describe("runUpdate", () => {
   it("throws when no lockfile exists", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "git:${repoDir}"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "git:${repoDir}"\n`,
     );
 
     await expect(runUpdate({ projectRoot })).rejects.toThrow(UpdateError);
@@ -58,7 +58,7 @@ describe("runUpdate", () => {
   it("reports no updates when nothing changed", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "git:${repoDir}"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "git:${repoDir}"\n`,
     );
     await runInstall({ projectRoot });
 
@@ -71,7 +71,7 @@ describe("runUpdate", () => {
   it("detects and applies updates when repo changes", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "git:${repoDir}"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "git:${repoDir}"\n`,
     );
     await runInstall({ projectRoot });
 
@@ -105,7 +105,7 @@ describe("runUpdate", () => {
 
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "git:${repoDir}"\n\n[skills.review]\nsource = "git:${repoDir}"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "git:${repoDir}"\n\n[[skills]]\nname = "review"\nsource = "git:${repoDir}"\n`,
     );
     await runInstall({ projectRoot });
 

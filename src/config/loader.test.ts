@@ -21,7 +21,8 @@ describe("loadConfig", () => {
       configPath,
       `version = 1
 
-[skills.pdf]
+[[skills]]
+name = "pdf"
 source = "anthropics/skills"
 ref = "v1.0.0"
 `,
@@ -29,17 +30,18 @@ ref = "v1.0.0"
 
     const config = await loadConfig(configPath);
     expect(config.version).toBe(1);
-    expect(config.skills["pdf"]?.source).toBe("anthropics/skills");
-    expect(config.skills["pdf"]?.ref).toBe("v1.0.0");
+    const pdf = config.skills.find((s) => s.name === "pdf");
+    expect(pdf?.source).toBe("anthropics/skills");
+    expect(pdf?.ref).toBe("v1.0.0");
   });
 
   it("loads a minimal config", async () => {
     const configPath = join(dir, "agents.toml");
-    await writeFile(configPath, "version = 1\n[skills]\n");
+    await writeFile(configPath, "version = 1\n");
 
     const config = await loadConfig(configPath);
     expect(config.version).toBe(1);
-    expect(config.skills).toEqual({});
+    expect(config.skills).toEqual([]);
   });
 
   it("throws ConfigError for missing file", async () => {
@@ -70,8 +72,6 @@ ref = "v1.0.0"
 
 [symlinks]
 targets = [".claude"]
-
-[skills]
 `,
     );
 

@@ -44,12 +44,12 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdatedSkill[]> {
   }
 
   // Determine which skills to update
-  const toUpdate = skillName ? [skillName] : Object.keys(config.skills);
+  const toUpdate = skillName ? [skillName] : config.skills.map((s) => s.name);
   const updated: UpdatedSkill[] = [];
   const newLock: Lockfile = { version: 1, skills: { ...lockfile.skills } };
 
   for (const name of toUpdate) {
-    const dep = config.skills[name];
+    const dep = config.skills.find((s) => s.name === name);
     if (!dep) {
       throw new UpdateError(`Skill "${name}" not found in agents.toml.`);
     }
@@ -101,7 +101,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdatedSkill[]> {
   // Write updated lockfile
   if (updated.length > 0) {
     await writeLockfile(lockPath, newLock);
-    await writeAgentsGitignore(agentsDir, Object.keys(config.skills));
+    await writeAgentsGitignore(agentsDir, config.skills.map((s) => s.name));
   }
 
   return updated;

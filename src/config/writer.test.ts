@@ -27,7 +27,7 @@ describe("writer", () => {
     it("produces valid TOML that parses", async () => {
       const config = await loadConfig(configPath);
       expect(config.version).toBe(1);
-      expect(config.skills).toEqual({});
+      expect(config.skills).toEqual([]);
     });
   });
 
@@ -38,9 +38,8 @@ describe("writer", () => {
       });
 
       const config = await loadConfig(configPath);
-      expect(config.skills["pdf"]?.source).toBe(
-        "anthropics/skills",
-      );
+      const pdf = config.skills.find((s) => s.name === "pdf");
+      expect(pdf?.source).toBe("anthropics/skills");
     });
 
     it("adds a skill with source and ref", async () => {
@@ -50,7 +49,8 @@ describe("writer", () => {
       });
 
       const config = await loadConfig(configPath);
-      expect(config.skills["pdf"]?.ref).toBe("v1.0.0");
+      const pdf = config.skills.find((s) => s.name === "pdf");
+      expect(pdf?.ref).toBe("v1.0.0");
     });
 
     it("adds a skill with source, ref, and path", async () => {
@@ -61,10 +61,9 @@ describe("writer", () => {
       });
 
       const config = await loadConfig(configPath);
-      expect(config.skills["review"]?.source).toBe(
-        "git:https://example.com/repo.git",
-      );
-      expect(config.skills["review"]?.path).toBe("skills/review");
+      const review = config.skills.find((s) => s.name === "review");
+      expect(review?.source).toBe("git:https://example.com/repo.git");
+      expect(review?.path).toBe("skills/review");
     });
 
     it("adds multiple skills", async () => {
@@ -76,7 +75,7 @@ describe("writer", () => {
       });
 
       const config = await loadConfig(configPath);
-      expect(Object.keys(config.skills)).toHaveLength(2);
+      expect(config.skills).toHaveLength(2);
     });
   });
 
@@ -89,7 +88,7 @@ describe("writer", () => {
       await removeSkillFromConfig(configPath, "pdf");
 
       const config = await loadConfig(configPath);
-      expect(config.skills["pdf"]).toBeUndefined();
+      expect(config.skills.find((s) => s.name === "pdf")).toBeUndefined();
     });
 
     it("preserves other skills when removing one", async () => {
@@ -102,8 +101,8 @@ describe("writer", () => {
       await removeSkillFromConfig(configPath, "a");
 
       const config = await loadConfig(configPath);
-      expect(config.skills["a"]).toBeUndefined();
-      expect(config.skills["b"]?.source).toBe("org/repo-b");
+      expect(config.skills.find((s) => s.name === "a")).toBeUndefined();
+      expect(config.skills.find((s) => s.name === "b")?.source).toBe("org/repo-b");
     });
 
     it("is a no-op for non-existent skill", async () => {

@@ -29,7 +29,7 @@ describe("runSync", () => {
   it("detects orphaned skills", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      "version = 1\n\n[skills]\n",
+      "version = 1\n",
     );
     // Orphan: installed but not in config
     const orphanDir = join(projectRoot, ".agents", "skills", "orphan");
@@ -45,7 +45,7 @@ describe("runSync", () => {
   it("detects missing skills", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "org/repo"\n`,
     );
 
     const result = await runSync({ projectRoot });
@@ -57,7 +57,7 @@ describe("runSync", () => {
   it("detects modified skills", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "org/repo"\n`,
     );
     const skillDir = join(projectRoot, ".agents", "skills", "pdf");
     await mkdir(skillDir, { recursive: true });
@@ -84,7 +84,7 @@ describe("runSync", () => {
   it("reports no issues when everything is in sync", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "org/repo"\n`,
     );
     const skillDir = join(projectRoot, ".agents", "skills", "pdf");
     await mkdir(skillDir, { recursive: true });
@@ -111,7 +111,7 @@ describe("runSync", () => {
   it("repairs broken symlinks", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[symlinks]\ntargets = [".claude"]\n\n[skills]\n`,
+      `version = 1\n\n[symlinks]\ntargets = [".claude"]\n`,
     );
 
     // Create .claude dir without the symlink
@@ -124,7 +124,7 @@ describe("runSync", () => {
   it("regenerates gitignore", async () => {
     await writeFile(
       join(projectRoot, "agents.toml"),
-      `version = 1\n\n[skills.pdf]\nsource = "org/repo"\n`,
+      `version = 1\n\n[[skills]]\nname = "pdf"\nsource = "org/repo"\n`,
     );
 
     const result = await runSync({ projectRoot });

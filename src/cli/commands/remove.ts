@@ -29,7 +29,7 @@ export async function runRemove(opts: RemoveOptions): Promise<void> {
 
   // Verify skill exists in config
   const config = await loadConfig(configPath);
-  if (!config.skills[skillName]) {
+  if (!config.skills.some((s) => s.name === skillName)) {
     throw new RemoveError(`Skill "${skillName}" not found in agents.toml.`);
   }
 
@@ -48,7 +48,7 @@ export async function runRemove(opts: RemoveOptions): Promise<void> {
 
   // 4. Regenerate gitignore
   const updatedConfig = await loadConfig(configPath);
-  const managedNames = Object.keys(updatedConfig.skills);
+  const managedNames = updatedConfig.skills.map((s) => s.name);
   await writeAgentsGitignore(agentsDir, managedNames);
 }
 

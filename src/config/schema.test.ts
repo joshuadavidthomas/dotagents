@@ -7,7 +7,7 @@ describe("agentsConfigSchema", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.version).toBe(1);
-      expect(result.data.skills).toEqual({});
+      expect(result.data.skills).toEqual([]);
     }
   });
 
@@ -16,21 +16,23 @@ describe("agentsConfigSchema", () => {
       version: 1,
       project: { name: "test-project" },
       symlinks: { targets: [".claude", ".cursor"] },
-      skills: {
-        "pdf-processing": {
+      skills: [
+        {
+          name: "pdf-processing",
           source: "anthropics/skills",
           ref: "v1.0.0",
         },
-        "my-skill": {
+        {
+          name: "my-skill",
           source: "path:../shared/my-skill",
         },
-      },
+      ],
     });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.project?.name).toBe("test-project");
       expect(result.data.symlinks?.targets).toEqual([".claude", ".cursor"]);
-      expect(Object.keys(result.data.skills)).toHaveLength(2);
+      expect(result.data.skills).toHaveLength(2);
     }
   });
 
@@ -46,7 +48,7 @@ describe("agentsConfigSchema", () => {
     const parseSkill = (source: string) =>
       agentsConfigSchema.safeParse({
         version: 1,
-        skills: { test: { source } },
+        skills: [{ name: "test", source }],
       });
 
     it("accepts owner/repo", () => {
@@ -110,7 +112,7 @@ describe("agentsConfigSchema", () => {
     const parseWithName = (name: string) =>
       agentsConfigSchema.safeParse({
         version: 1,
-        skills: { [name]: { source: "owner/repo" } },
+        skills: [{ name, source: "owner/repo" }],
       });
 
     it("accepts valid skill names", () => {

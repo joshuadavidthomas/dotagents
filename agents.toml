@@ -1,9 +1,9 @@
 version = 1
 
-[skills]
-
-[skills.find-bugs]
+[[skills]]
+name = "find-bugs"
 source = "getsentry/skills"
 
-[skills.warden-skill]
+[[skills]]
+name = "warden-skill"
 source = "getsentry/warden"

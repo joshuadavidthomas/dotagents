@@ -22,7 +22,7 @@ describe("runInit", () => {
 
     const config = await loadConfig(join(dir, "agents.toml"));
     expect(config.version).toBe(1);
-    expect(config.skills).toEqual({});
+    expect(config.skills).toEqual([]);
   });
 
   it("creates .agents/skills/ directory", async () => {
@@ -40,7 +40,7 @@ describe("runInit", () => {
   });
 
   it("throws InitError if agents.toml exists without --force", async () => {
-    await writeFile(join(dir, "agents.toml"), "version = 1\n[skills]\n");
+    await writeFile(join(dir, "agents.toml"), "version = 1\n");
 
     await expect(runInit({ projectRoot: dir })).rejects.toThrow(InitError);
     await expect(runInit({ projectRoot: dir })).rejects.toThrow(

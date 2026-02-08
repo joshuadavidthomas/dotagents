@@ -25,7 +25,14 @@ const skillSourceSchema = z.string().check(
 
 export type SkillSource = z.infer<typeof skillSourceSchema>;
 
+/** Skill names must be safe for use in file paths: alphanumeric, dots, hyphens, underscores. */
+const skillNameSchema = z.string().regex(
+  /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/,
+  "Skill names must start with alphanumeric and contain only [a-zA-Z0-9._-]",
+);
+
 const skillDependencySchema = z.object({
+  name: skillNameSchema,
   source: skillSourceSchema,
   ref: z.string().optional(),
   path: z.string().optional(),
@@ -45,17 +52,11 @@ const projectConfigSchema = z.object({
 
 export type ProjectConfig = z.infer<typeof projectConfigSchema>;
 
-/** Skill names must be safe for use in file paths: alphanumeric, dots, hyphens, underscores. */
-const skillNameSchema = z.string().regex(
-  /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/,
-  "Skill names must start with alphanumeric and contain only [a-zA-Z0-9._-]",
-);
-
 export const agentsConfigSchema = z.object({
   version: z.literal(1),
   project: projectConfigSchema.optional(),
   symlinks: symlinksConfigSchema.optional(),
-  skills: z.record(skillNameSchema, skillDependencySchema).default({}),
+  skills: z.array(skillDependencySchema).default([]),
 });
 
 export type AgentsConfig = z.infer<typeof agentsConfigSchema>;

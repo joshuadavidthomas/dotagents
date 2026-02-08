@@ -90,7 +90,7 @@ export async function runAdd(opts: AddOptions): Promise<string> {
 
   // Check if skill already exists in config
   const config = await loadConfig(configPath);
-  if (config.skills[skillName]) {
+  if (config.skills.some((s) => s.name === skillName)) {
     throw new AddError(
       `Skill "${skillName}" already exists in agents.toml. Remove it first or use 'dotagents update'.`,
     );
