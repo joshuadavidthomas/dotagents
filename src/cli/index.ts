@@ -1,5 +1,3 @@
-import { parseArgs } from "node:util";
-
 const COMMANDS = ["init", "install", "add", "remove", "update", "sync", "list"] as const;
 type Command = (typeof COMMANDS)[number];
 
@@ -24,37 +22,30 @@ Options:
 }
 
 async function main(): Promise<void> {
-  const { positionals, values } = parseArgs({
-    allowPositionals: true,
-    options: {
-      help: { type: "boolean", short: "h" },
-      version: { type: "boolean" },
-    },
-    strict: false,
-  });
+  const args = process.argv.slice(2);
+  const first = args[0];
 
-  if (values["version"]) {
+  // Handle top-level flags before any command
+  if (!first || first === "--help" || first === "-h") {
+    printUsage();
+    return;
+  }
+  if (first === "--version" || first === "-V") {
     // eslint-disable-next-line no-console
     console.log("0.1.0");
     return;
   }
 
-  const command = positionals[0] as Command | undefined;
-
-  if (values["help"] || !command) {
-    printUsage();
-    return;
-  }
-
-  if (!COMMANDS.includes(command as Command)) {
-    console.error(`Unknown command: ${command}`);
+  if (!COMMANDS.includes(first as Command)) {
+    console.error(`Unknown command: ${first}`);
     printUsage();
     process.exitCode = 1;
     return;
   }
 
-  const mod = await import(`./commands/${command}.js`);
-  await mod.default(positionals.slice(1));
+  // Pass remaining args (after command name) to the subcommand
+  const mod = await import(`./commands/${first}.js`);
+  await mod.default(args.slice(1));
 }
 
 main().catch((err: unknown) => {

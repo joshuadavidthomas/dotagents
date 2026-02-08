@@ -1,0 +1,12 @@
+version = 1
+
+[defaults.output]
+failOn = "high"
+commentOn = "medium"
+
+[[triggers]]
+name = "find-bugs"
+event = "pull_request"
+actions = ["opened", "synchronize", "reopened"]
+skill = "find-bugs"
+remote = "getsentry/sentry-skills"

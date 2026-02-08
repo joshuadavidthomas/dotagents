@@ -86,7 +86,64 @@ export async function discoverAllSkills(
     }
   }
 
+  // Marketplace format: plugins/*/skills/*/SKILL.md
+  const marketplaceSkills = await scanMarketplaceFormat(repoDir);
+  for (const skill of marketplaceSkills) {
+    if (!found.has(skill.meta.name)) {
+      found.set(skill.meta.name, skill);
+    }
+  }
+
   return [...found.values()];
+}
+
+async function scanMarketplaceFormat(
+  repoDir: string,
+): Promise<DiscoveredSkill[]> {
+  const pluginsDir = join(repoDir, ".claude-plugin");
+  if (!existsSync(pluginsDir)) return [];
+
+  const pluginsDirPath = join(repoDir, "plugins");
+  if (!existsSync(pluginsDirPath)) return [];
+
+  let plugins;
+  try {
+    plugins = await readdir(pluginsDirPath, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const results: DiscoveredSkill[] = [];
+  for (const plugin of plugins) {
+    if (!plugin.isDirectory()) continue;
+    const skillsDir = join(pluginsDirPath, plugin.name, "skills");
+    if (!existsSync(skillsDir)) continue;
+
+    let skillEntries;
+    try {
+      skillEntries = await readdir(skillsDir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of skillEntries) {
+      if (!entry.isDirectory()) continue;
+      const skillMdPath = join(skillsDir, entry.name, "SKILL.md");
+      if (!existsSync(skillMdPath)) continue;
+
+      try {
+        const meta = await loadSkillMd(skillMdPath);
+        results.push({
+          path: `plugins/${plugin.name}/skills/${entry.name}`,
+          meta,
+        });
+      } catch {
+        // Skip invalid
+      }
+    }
+  }
+
+  return results;
 }
 
 async function tryMarketplaceFormat(

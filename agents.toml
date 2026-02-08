@@ -1,0 +1,9 @@
+version = 1
+
+[skills]
+
+[skills.find-bugs]
+source = "getsentry/skills"
+
+[skills.warden-skill]
+source = "getsentry/warden"

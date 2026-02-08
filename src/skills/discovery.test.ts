@@ -130,4 +130,34 @@ describe("discoverAllSkills", () => {
     const results = await discoverAllSkills(repoDir);
     expect(results).toHaveLength(0);
   });
+
+  it("discovers skills in marketplace format", async () => {
+    // .claude-plugin must exist (marker for marketplace repos)
+    await mkdir(join(repoDir, ".claude-plugin"), { recursive: true });
+    // plugins/<plugin>/skills/<skill>/SKILL.md
+    await mkdir(
+      join(repoDir, "plugins", "my-plugin", "skills", "find-bugs"),
+      { recursive: true },
+    );
+    await writeFile(
+      join(repoDir, "plugins", "my-plugin", "skills", "find-bugs", "SKILL.md"),
+      SKILL_MD("find-bugs"),
+    );
+    await mkdir(
+      join(repoDir, "plugins", "my-plugin", "skills", "code-review"),
+      { recursive: true },
+    );
+    await writeFile(
+      join(repoDir, "plugins", "my-plugin", "skills", "code-review", "SKILL.md"),
+      SKILL_MD("code-review"),
+    );
+
+    const results = await discoverAllSkills(repoDir);
+    expect(results).toHaveLength(2);
+    const names = results.map((r) => r.meta.name).sort();
+    expect(names).toEqual(["code-review", "find-bugs"]);
+    expect(results.find((r) => r.meta.name === "find-bugs")!.path).toBe(
+      "plugins/my-plugin/skills/find-bugs",
+    );
+  });
 });
