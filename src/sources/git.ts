@@ -21,7 +21,7 @@ export async function clone(
   if (ref) {
     args.push("--branch", ref);
   }
-  args.push(url, dest);
+  args.push("--", url, dest);
 
   try {
     await exec("git", args);
@@ -38,7 +38,7 @@ export async function clone(
  */
 export async function fetchAndReset(repoDir: string): Promise<void> {
   try {
-    await exec("git", ["fetch", "--depth=1", "origin"], { cwd: repoDir });
+    await exec("git", ["fetch", "--depth=1", "--", "origin"], { cwd: repoDir });
     await exec("git", ["reset", "--hard", "FETCH_HEAD"], { cwd: repoDir });
   } catch (err) {
     if (err instanceof ExecError) {
@@ -53,7 +53,7 @@ export async function fetchAndReset(repoDir: string): Promise<void> {
  */
 export async function fetchRef(repoDir: string, ref: string): Promise<void> {
   try {
-    await exec("git", ["fetch", "--depth=1", "origin", ref], { cwd: repoDir });
+    await exec("git", ["fetch", "--depth=1", "--", "origin", ref], { cwd: repoDir });
     await exec("git", ["checkout", "FETCH_HEAD"], { cwd: repoDir });
   } catch (err) {
     if (err instanceof ExecError) {

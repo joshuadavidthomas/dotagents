@@ -69,8 +69,8 @@ description: Code review skill
   });
 
   it("resolves a local path: source", async () => {
-    // Copy skill to a location relative to project root
-    const skillDir = join(tmpDir, "local-skills", "my-skill");
+    // Create skill inside project root
+    const skillDir = join(projectRoot, "local-skills", "my-skill");
     await mkdir(skillDir, { recursive: true });
     await writeFile(
       join(skillDir, "SKILL.md"),
@@ -83,7 +83,7 @@ description: A local skill
 
     const result = await resolveSkill(
       "my-skill",
-      { source: `path:${skillDir}` },
+      { source: "path:local-skills/my-skill" },
       { projectRoot },
     );
 

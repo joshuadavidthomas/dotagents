@@ -61,8 +61,28 @@ describe("agentsConfigSchema", () => {
       expect(parseSkill("anthropics/skills@abc123").success).toBe(true);
     });
 
-    it("accepts git: source", () => {
+    it("accepts git: source with https", () => {
       expect(parseSkill("git:https://example.com/repo.git").success).toBe(true);
+    });
+
+    it("accepts git: source with ssh", () => {
+      expect(parseSkill("git:ssh://git@example.com/repo.git").success).toBe(true);
+    });
+
+    it("accepts git: source with git@", () => {
+      expect(parseSkill("git:git@github.com:owner/repo.git").success).toBe(true);
+    });
+
+    it("accepts git: source with absolute path", () => {
+      expect(parseSkill("git:/tmp/local-repo").success).toBe(true);
+    });
+
+    it("rejects git: source without protocol", () => {
+      expect(parseSkill("git:--upload-pack=evil").success).toBe(false);
+    });
+
+    it("rejects git: source with bare relative path", () => {
+      expect(parseSkill("git:relative/path").success).toBe(false);
     });
 
     it("accepts path: source", () => {
@@ -83,6 +103,38 @@ describe("agentsConfigSchema", () => {
 
     it("rejects three-part path (not a valid format)", () => {
       expect(parseSkill("a/b/c").success).toBe(false);
+    });
+  });
+
+  describe("skill name validation", () => {
+    const parseWithName = (name: string) =>
+      agentsConfigSchema.safeParse({
+        version: 1,
+        skills: { [name]: { source: "owner/repo" } },
+      });
+
+    it("accepts valid skill names", () => {
+      expect(parseWithName("pdf-processing").success).toBe(true);
+      expect(parseWithName("my_skill").success).toBe(true);
+      expect(parseWithName("skill.v2").success).toBe(true);
+      expect(parseWithName("find-bugs").success).toBe(true);
+    });
+
+    it("rejects path traversal in skill names", () => {
+      expect(parseWithName("../../etc/passwd").success).toBe(false);
+      expect(parseWithName("../evil").success).toBe(false);
+    });
+
+    it("rejects skill names with slashes", () => {
+      expect(parseWithName("foo/bar").success).toBe(false);
+    });
+
+    it("rejects skill names starting with dot", () => {
+      expect(parseWithName(".hidden").success).toBe(false);
+    });
+
+    it("rejects skill names starting with hyphen", () => {
+      expect(parseWithName("-bad").success).toBe(false);
     });
   });
 });

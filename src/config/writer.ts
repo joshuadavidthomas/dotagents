@@ -1,9 +1,11 @@
 import { readFile, writeFile } from "node:fs/promises";
+import { stringify } from "smol-toml";
 import type { SkillDependency } from "./schema.js";
 
 /**
  * Add a skill entry to agents.toml.
  * Appends a new [skills.<name>] section at the end of the file.
+ * Uses smol-toml's stringify for proper TOML escaping.
  */
 export async function addSkillToConfig(
   filePath: string,
@@ -12,15 +14,17 @@ export async function addSkillToConfig(
 ): Promise<void> {
   const content = await readFile(filePath, "utf-8");
 
-  const lines: string[] = [`\n[skills.${name}]`, `source = "${dep.source}"`];
-  if (dep.ref) {
-    lines.push(`ref = "${dep.ref}"`);
-  }
-  if (dep.path) {
-    lines.push(`path = "${dep.path}"`);
-  }
+  // Build a partial TOML object and stringify it for proper escaping
+  const entry: Record<string, string> = { source: dep.source };
+  if (dep.ref) entry["ref"] = dep.ref;
+  if (dep.path) entry["path"] = dep.path;
 
-  const newContent = content.trimEnd() + "\n" + lines.join("\n") + "\n";
+  const section = stringify({ skills: { [name]: entry } });
+  // stringify produces [skills.<name>]\nsource = "..."\n — strip the [skills] wrapper
+  // since agents.toml already has it
+  const sectionLines = section.split("\n").filter((l) => l.trim() !== "[skills]");
+
+  const newContent = content.trimEnd() + "\n" + sectionLines.join("\n") + "\n";
   await writeFile(filePath, newContent, "utf-8");
 }
 

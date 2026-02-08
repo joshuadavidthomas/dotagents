@@ -20,10 +20,12 @@ interface ExecResult {
  * Run a command and return stdout/stderr.
  * Non-interactive: sets GIT_TERMINAL_PROMPT=0 for git commands.
  */
+const DEFAULT_TIMEOUT_MS = 60_000; // 60 seconds
+
 export function exec(
   cmd: string,
   args: string[],
-  opts?: { cwd?: string; env?: Record<string, string> },
+  opts?: { cwd?: string; env?: Record<string, string>; timeoutMs?: number },
 ): Promise<ExecResult> {
   return new Promise((resolve, reject) => {
     const env = {
@@ -35,7 +37,7 @@ export function exec(
       ...opts?.env,
     };
 
-    execFile(cmd, args, { cwd: opts?.cwd, env, maxBuffer: 50 * 1024 * 1024 }, (err, stdout, stderr) => {
+    execFile(cmd, args, { cwd: opts?.cwd, env, maxBuffer: 50 * 1024 * 1024, timeout: opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS }, (err, stdout, stderr) => {
       if (err) {
         const code = "code" in err ? (err.code as number | null) : null;
         reject(
