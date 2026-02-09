@@ -30,6 +30,7 @@
     "README.md",
     "LICENSE"
   ],
+  "packageManager": "pnpm@10.28.2",
   "license": "MIT",
   "engines": {
     "node": ">=20"
