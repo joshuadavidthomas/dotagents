@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, readFile, rm, mkdir } from "node:fs/promises";
+import { mkdtemp, readFile, rm, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { writeAgentsGitignore } from "./writer.js";
+import { existsSync } from "node:fs";
+import { writeAgentsGitignore, removeAgentsGitignore, updateAgentsGitignore } from "./writer.js";
 
 describe("writeAgentsGitignore", () => {
   let dir: string;
@@ -56,5 +57,65 @@ describe("writeAgentsGitignore", () => {
     const content = await readFile(join(agentsDir, ".gitignore"), "utf-8");
     expect(content).not.toContain("old-skill");
     expect(content).toContain("new-skill");
+  });
+});
+
+describe("removeAgentsGitignore", () => {
+  let dir: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "dotagents-test-"));
+    await mkdir(join(dir, ".agents"), { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true });
+  });
+
+  it("removes existing .gitignore", async () => {
+    const agentsDir = join(dir, ".agents");
+    await writeFile(join(agentsDir, ".gitignore"), "some content");
+    await removeAgentsGitignore(agentsDir);
+    expect(existsSync(join(agentsDir, ".gitignore"))).toBe(false);
+  });
+
+  it("is a no-op when .gitignore does not exist", async () => {
+    const agentsDir = join(dir, ".agents");
+    await removeAgentsGitignore(agentsDir);
+    expect(existsSync(join(agentsDir, ".gitignore"))).toBe(false);
+  });
+});
+
+describe("updateAgentsGitignore", () => {
+  let dir: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "dotagents-test-"));
+    await mkdir(join(dir, ".agents"), { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true });
+  });
+
+  it("creates .gitignore when gitignore is true", async () => {
+    const agentsDir = join(dir, ".agents");
+    await updateAgentsGitignore(agentsDir, true, ["my-skill"]);
+
+    const content = await readFile(join(agentsDir, ".gitignore"), "utf-8");
+    expect(content).toContain("/skills/my-skill/");
+  });
+
+  it("removes .gitignore when gitignore is false", async () => {
+    const agentsDir = join(dir, ".agents");
+    await writeFile(join(agentsDir, ".gitignore"), "existing content");
+    await updateAgentsGitignore(agentsDir, false, ["my-skill"]);
+    expect(existsSync(join(agentsDir, ".gitignore"))).toBe(false);
+  });
+
+  it("does not create .gitignore when gitignore is false", async () => {
+    const agentsDir = join(dir, ".agents");
+    await updateAgentsGitignore(agentsDir, false, ["my-skill"]);
+    expect(existsSync(join(agentsDir, ".gitignore"))).toBe(false);
   });
 });

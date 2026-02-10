@@ -8,7 +8,7 @@ import { resolveSkill } from "../../skills/resolver.js";
 import { hashDirectory } from "../../utils/hash.js";
 import { copyDir } from "../../utils/fs.js";
 import { writeLockfile } from "../../lockfile/writer.js";
-import { writeAgentsGitignore } from "../../gitignore/writer.js";
+import { updateAgentsGitignore } from "../../gitignore/writer.js";
 import type { Lockfile, LockedSkill } from "../../lockfile/schema.js";
 
 export class UpdateError extends Error {
@@ -101,7 +101,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdatedSkill[]> {
   // Write updated lockfile
   if (updated.length > 0) {
     await writeLockfile(lockPath, newLock);
-    await writeAgentsGitignore(agentsDir, config.skills.map((s) => s.name));
+    await updateAgentsGitignore(agentsDir, config.gitignore, config.skills.map((s) => s.name));
   }
 
   return updated;

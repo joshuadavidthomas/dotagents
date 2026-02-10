@@ -7,7 +7,32 @@ describe("agentsConfigSchema", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.version).toBe(1);
+      expect(result.data.gitignore).toBe(true);
       expect(result.data.skills).toEqual([]);
+    }
+  });
+
+  it("defaults gitignore to true when absent", () => {
+    const result = agentsConfigSchema.safeParse({ version: 1 });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.gitignore).toBe(true);
+    }
+  });
+
+  it("parses gitignore = true", () => {
+    const result = agentsConfigSchema.safeParse({ version: 1, gitignore: true });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.gitignore).toBe(true);
+    }
+  });
+
+  it("parses gitignore = false", () => {
+    const result = agentsConfigSchema.safeParse({ version: 1, gitignore: false });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.gitignore).toBe(false);
     }
   });
 

@@ -11,7 +11,7 @@ import { resolveSkill } from "../../skills/resolver.js";
 import type { ResolvedSkill } from "../../skills/resolver.js";
 import { hashDirectory } from "../../utils/hash.js";
 import { copyDir } from "../../utils/fs.js";
-import { writeAgentsGitignore } from "../../gitignore/writer.js";
+import { updateAgentsGitignore } from "../../gitignore/writer.js";
 import { ensureSkillsSymlink } from "../../symlinks/manager.js";
 
 export class InstallError extends Error {
@@ -136,7 +136,7 @@ export async function runInstall(opts: InstallOptions): Promise<InstallResult> {
   }
 
   // 6. Regenerate .agents/.gitignore
-  await writeAgentsGitignore(agentsDir, skillNames);
+  await updateAgentsGitignore(agentsDir, config.gitignore, skillNames);
 
   // 7. Create/verify symlinks
   const targets = config.symlinks?.targets ?? [];

@@ -29,6 +29,16 @@ describe("writer", () => {
       expect(config.version).toBe(1);
       expect(config.skills).toEqual([]);
     });
+
+    it("sets gitignore to false by default", async () => {
+      const config = await loadConfig(configPath);
+      expect(config.gitignore).toBe(false);
+    });
+
+    it("contains gitignore = false in output", () => {
+      const content = generateDefaultConfig();
+      expect(content).toContain("gitignore = false");
+    });
   });
 
   describe("addSkillToConfig", () => {
