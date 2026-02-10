@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - release/**
   pull_request:
 
 jobs:
@@ -43,3 +45,12 @@ jobs:
 
       - name: Verify CLI runs
         run: node dist/cli/index.js --help
+
+      - run: npm pack
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: |
+            ${{ github.workspace }}/*.tgz
