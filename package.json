@@ -1,6 +1,6 @@
 {
   "name": "@sentry/dotagents",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Package manager for .agents directories",
   "type": "module",
   "main": "dist/index.js",
