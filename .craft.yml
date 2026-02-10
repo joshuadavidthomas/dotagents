@@ -9,4 +9,5 @@ artifactProvider:
         - npm-package
 targets:
   - name: npm
+    access: public
   - name: github

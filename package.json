@@ -1,5 +1,5 @@
 {
-  "name": "dotagents",
+  "name": "@sentry/dotagents",
   "version": "0.1.0",
   "description": "Package manager for .agents directories",
   "type": "module",
