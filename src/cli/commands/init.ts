@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import chalk from "chalk";
 import { generateDefaultConfig } from "../../config/writer.js";
-import { writeAgentsGitignore } from "../../gitignore/writer.js";
+import { updateAgentsGitignore } from "../../gitignore/writer.js";
 import { ensureSkillsSymlink } from "../../symlinks/manager.js";
 import { loadConfig } from "../../config/loader.js";
 import { parseArgs } from "node:util";
@@ -25,10 +25,10 @@ export async function runInit(opts: InitOptions): Promise<void> {
 
   await writeFile(configPath, generateDefaultConfig(), "utf-8");
   await mkdir(skillsDir, { recursive: true });
-  await writeAgentsGitignore(agentsDir, []);
 
-  // Set up symlinks if config declares them
+  // Set up gitignore and symlinks based on config
   const config = await loadConfig(configPath);
+  await updateAgentsGitignore(agentsDir, config.gitignore, []);
   const targets = config.symlinks?.targets ?? [];
   const symlinkResults: { target: string; created: boolean; migrated: string[] }[] = [];
 
@@ -38,18 +38,21 @@ export async function runInit(opts: InitOptions): Promise<void> {
     symlinkResults.push({ target, ...result });
   }
 
-  return printSummary(symlinkResults);
+  return printSummary(config.gitignore, symlinkResults);
 }
 
 function printSummary(
+  gitignore: boolean,
   symlinks: { target: string; created: boolean; migrated: string[] }[],
 ): void {
   // eslint-disable-next-line no-console
   console.log(chalk.green("Created agents.toml"));
   // eslint-disable-next-line no-console
   console.log(chalk.green("Created .agents/skills/"));
-  // eslint-disable-next-line no-console
-  console.log(chalk.green("Created .agents/.gitignore"));
+  if (gitignore) {
+    // eslint-disable-next-line no-console
+    console.log(chalk.green("Created .agents/.gitignore"));
+  }
 
   for (const s of symlinks) {
     if (s.created) {

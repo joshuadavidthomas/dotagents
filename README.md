@@ -27,6 +27,7 @@ This creates an `agents.toml`:
 
 ```toml
 version = 1
+gitignore = false
 
 [[skills]]
 name = "find-bugs"
@@ -72,8 +73,14 @@ source = "path:./my-skills/local-skill"   # Local directory
 1. Skills are declared in `agents.toml` at the project root
 2. `dotagents install` clones repos, discovers skills by convention, and copies them into `.agents/skills/`
 3. `agents.lock` records the resolved commit and a SHA-256 integrity hash
-4. `.agents/.gitignore` is auto-generated to ignore managed skills (custom skills in `.agents/skills/` remain tracked)
+4. By default (`gitignore = false`), skills are checked into git so collaborators get them immediately. Set `gitignore = true` to auto-generate `.agents/.gitignore` and exclude managed skills instead.
 5. Symlinks connect `.agents/skills/` to wherever your tools look (configured via `symlinks.targets`)
+
+## Checking In Skills
+
+By default, `dotagents init` sets `gitignore = false` so installed skills are committed to git. This means anyone cloning the repo gets skills immediately — they only need dotagents when adding or updating skills.
+
+To gitignore managed skills instead (collaborators must run `dotagents install`), set `gitignore = true` in `agents.toml` or remove the field entirely (it defaults to `true` when absent for backward compatibility).
 
 ## Contributing
 

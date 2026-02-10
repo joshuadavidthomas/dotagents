@@ -1,1 +1,1 @@
-export { writeAgentsGitignore } from "./writer.js";
+export { writeAgentsGitignore, removeAgentsGitignore, updateAgentsGitignore } from "./writer.js";

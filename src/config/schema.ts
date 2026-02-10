@@ -54,6 +54,7 @@ export type ProjectConfig = z.infer<typeof projectConfigSchema>;
 
 export const agentsConfigSchema = z.object({
   version: z.literal(1),
+  gitignore: z.boolean().default(true),
   project: projectConfigSchema.optional(),
   symlinks: symlinksConfigSchema.optional(),
   skills: z.array(skillDependencySchema).default([]),

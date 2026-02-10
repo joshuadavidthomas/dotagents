@@ -4,7 +4,7 @@ import { readdir } from "node:fs/promises";
 import chalk from "chalk";
 import { loadConfig } from "../../config/loader.js";
 import { loadLockfile } from "../../lockfile/loader.js";
-import { writeAgentsGitignore } from "../../gitignore/writer.js";
+import { updateAgentsGitignore } from "../../gitignore/writer.js";
 import { ensureSkillsSymlink, verifySymlinks } from "../../symlinks/manager.js";
 import { hashDirectory } from "../../utils/hash.js";
 
@@ -37,7 +37,7 @@ export async function runSync(opts: SyncOptions): Promise<SyncResult> {
   const issues: SyncIssue[] = [];
 
   // 1. Regenerate .agents/.gitignore
-  await writeAgentsGitignore(agentsDir, [...declaredNames]);
+  await updateAgentsGitignore(agentsDir, config.gitignore, [...declaredNames]);
 
   // 2. Check for orphaned skills (installed but not in agents.toml)
   if (existsSync(skillsDir)) {
@@ -99,7 +99,7 @@ export async function runSync(opts: SyncOptions): Promise<SyncResult> {
 
   return {
     issues,
-    gitignoreUpdated: true,
+    gitignoreUpdated: config.gitignore,
     symlinksRepaired,
   };
 }
@@ -108,7 +108,11 @@ export default async function sync(): Promise<void> {
   const { resolve } = await import("node:path");
   const result = await runSync({ projectRoot: resolve(".") });
 
-  console.log(chalk.green("Regenerated .agents/.gitignore"));
+  if (result.gitignoreUpdated) {
+    console.log(chalk.green("Regenerated .agents/.gitignore"));
+  } else {
+    console.log(chalk.green("Removed .agents/.gitignore (skills checked into git)"));
+  }
 
   if (result.symlinksRepaired > 0) {
     console.log(chalk.green(`Repaired ${result.symlinksRepaired} symlink(s)`));

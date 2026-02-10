@@ -6,7 +6,7 @@ import { loadConfig } from "../../config/loader.js";
 import { removeSkillFromConfig } from "../../config/writer.js";
 import { loadLockfile } from "../../lockfile/loader.js";
 import { writeLockfile } from "../../lockfile/writer.js";
-import { writeAgentsGitignore } from "../../gitignore/writer.js";
+import { updateAgentsGitignore } from "../../gitignore/writer.js";
 
 export class RemoveError extends Error {
   constructor(message: string) {
@@ -49,7 +49,7 @@ export async function runRemove(opts: RemoveOptions): Promise<void> {
   // 4. Regenerate gitignore
   const updatedConfig = await loadConfig(configPath);
   const managedNames = updatedConfig.skills.map((s) => s.name);
-  await writeAgentsGitignore(agentsDir, managedNames);
+  await updateAgentsGitignore(agentsDir, updatedConfig.gitignore, managedNames);
 }
 
 export default async function remove(args: string[]): Promise<void> {

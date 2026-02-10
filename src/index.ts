@@ -6,7 +6,7 @@ export type {
   ProjectConfig,
   SkillSource,
 } from "./config/index.js";
-export { writeAgentsGitignore } from "./gitignore/index.js";
+export { writeAgentsGitignore, removeAgentsGitignore, updateAgentsGitignore } from "./gitignore/index.js";
 export { ensureSkillsSymlink, verifySymlinks } from "./symlinks/index.js";
 export { exec, ExecError, hashDirectory, sha256, copyDir } from "./utils/index.js";
 export { clone, fetchAndReset, fetchRef, headCommit, isGitRepo, GitError, ensureCached, resolveLocalSource, LocalSourceError } from "./sources/index.js";
