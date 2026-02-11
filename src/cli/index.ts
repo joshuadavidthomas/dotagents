@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const COMMANDS = ["init", "install", "add", "remove", "update", "sync", "list"] as const;
 type Command = (typeof COMMANDS)[number];
 
