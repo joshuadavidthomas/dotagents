@@ -7,7 +7,9 @@ const codex: AgentDefinition = {
   id: "codex",
   displayName: "Codex",
   configDir: ".codex",
-  skillsParentDir: ".codex",
+  // reads .agents/skills/ natively at both project and user scope
+  skillsParentDir: undefined,
+  userSkillsParentDirs: undefined,
   mcp: {
     filePath: ".codex/config.toml",
     rootKey: "mcp_servers",

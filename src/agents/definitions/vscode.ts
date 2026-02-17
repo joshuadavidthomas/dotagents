@@ -5,7 +5,7 @@ const vscode: AgentDefinition = {
   id: "vscode",
   displayName: "VS Code Copilot",
   configDir: ".vscode",
-  skillsParentDir: ".vscode",
+  // reads .agents/skills/ natively at both project and user scope
   mcp: {
     filePath: ".vscode/mcp.json",
     rootKey: "servers",
