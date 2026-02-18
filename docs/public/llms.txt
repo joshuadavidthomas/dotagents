@@ -1,0 +1,198 @@
+# dotagents
+
+> A package manager for .agents directories
+
+dotagents manages agent skill dependencies declared in `agents.toml`, maintains a lockfile (`agents.lock`) for reproducibility, and handles symlinks so tools like Claude Code, Cursor, Codex, VS Code, and OpenCode can discover skills from a single canonical location.
+
+## Quick Start
+
+```bash
+npx @sentry/dotagents init --agents claude
+npx @sentry/dotagents add getsentry/skills --name find-bugs
+npx @sentry/dotagents install
+```
+
+## How It Works
+
+1. Skills are declared in `agents.toml` at the project root
+2. `install` clones repos, discovers skills by convention, and copies them into `.agents/skills/`
+3. `agents.lock` records the resolved commit and a SHA-256 integrity hash
+4. Symlinks connect `.agents/skills/` to wherever your tools look (configured via the `agents` field)
+5. MCP and hook configs are generated for each declared agent
+
+## Configuration (agents.toml)
+
+```toml
+version = 1
+gitignore = false
+agents = ["claude", "cursor"]
+
+[[skills]]
+name = "find-bugs"
+source = "getsentry/skills"
+
+[[skills]]
+name = "review"
+source = "getsentry/skills@v1.0.0"
+
+[[skills]]
+name = "internal"
+source = "git:https://git.corp.dev/repo"
+
+[[skills]]
+name = "local"
+source = "path:./my-skills/local-skill"
+
+# Stdio MCP server
+[[mcp]]
+name = "github"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+env = ["GITHUB_TOKEN"]
+
+# HTTP MCP server
+[[mcp]]
+name = "remote-api"
+url = "https://mcp.example.com/sse"
+headers = { Authorization = "Bearer tok" }
+
+# Hooks
+[[hooks]]
+event = "PreToolUse"
+matcher = "Bash"
+command = "my-lint-check"
+
+# Trust policy (optional)
+[trust]
+github_orgs = ["getsentry"]
+github_repos = ["external-org/specific-repo"]
+git_domains = ["git.corp.example.com"]
+```
+
+### Top-level Fields
+
+- `version` (required): Schema version. Always `1`.
+- `gitignore` (optional): When `true`, generates `.agents/.gitignore` to exclude managed skills. When `false`, skills are checked into git. Default for `init` is `false`.
+- `agents` (optional): Array of agent tool IDs: `claude`, `cursor`, `codex`, `vscode`, `opencode`. Creates symlinks and config files for each.
+
+### Skills
+
+Each `[[skills]]` entry requires `name` and `source`. Optional fields: `ref` (git ref), `path` (subdirectory override).
+
+Source formats:
+- `owner/repo` — GitHub (auto-discovers skills by name)
+- `owner/repo@ref` — GitHub pinned to a tag/branch/commit
+- `git:<url>` — Non-GitHub git server
+- `path:<relative>` — Local filesystem path
+
+Skill name rules: must start with alphanumeric, contain only `[a-zA-Z0-9._-]`.
+
+### MCP Servers
+
+Each `[[mcp]]` entry requires `name` and either `command` (stdio) or `url` (HTTP), not both.
+
+- `command`: Command to run for stdio transport
+- `args`: Arguments for the command
+- `url`: URL for HTTP/SSE transport
+- `headers`: HTTP headers (for `url` servers only)
+- `env`: Array of environment variable names to pass through
+
+Config files generated per agent:
+- Claude: `.mcp.json`
+- Cursor: `.cursor/mcp.json`
+- Codex: `.codex/config.toml`
+- VS Code: `.vscode/mcp.json`
+- OpenCode: `opencode.json`
+
+### Hooks
+
+Each `[[hooks]]` entry requires `event` and `command`. Optional: `matcher`.
+
+Supported events: `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`.
+
+### Trust
+
+Optional `[trust]` section to restrict allowed sources:
+- `allow_all = true` — Trust everything (explicit)
+- `github_orgs` — Array of allowed GitHub org/user names
+- `github_repos` — Array of exact `owner/repo` strings
+- `git_domains` — Array of allowed domain names for `git:` URLs
+- Local `path:` sources are always allowed
+
+When `[trust]` is absent, all sources are allowed.
+
+## CLI Commands
+
+### init
+```
+dotagents init [--force] [--agents claude,cursor]
+```
+Initialize a project with `agents.toml` and `.agents/skills/`. Interactive mode prompts for agents, gitignore, and trust policy.
+
+### install
+```
+dotagents install [--frozen] [--force]
+```
+Install all dependencies from `agents.toml`. Use `--frozen` in CI to enforce lockfile consistency.
+
+### add
+```
+dotagents add <source> [--name <name>] [--ref <ref>]
+```
+Add a skill dependency. Auto-discovers skills in repos; use `--name` for multi-skill repos.
+
+### remove
+```
+dotagents remove <name>
+```
+Remove a skill from config, disk, and lockfile.
+
+### update
+```
+dotagents update [name]
+```
+Update all or one skill to latest version. Skips immutable (SHA-pinned) refs.
+
+### sync
+```
+dotagents sync
+```
+Reconcile state: repair symlinks, verify integrity, adopt orphaned skills, regenerate configs.
+
+### list
+```
+dotagents list [--json]
+```
+Show installed skills. Status: `✓` ok, `~` modified, `✗` missing, `?` unlocked.
+
+## Skill Discovery
+
+After cloning a repo, dotagents scans these locations for a skill matching the name:
+
+1. `<name>/SKILL.md`
+2. `skills/<name>/SKILL.md`
+3. `.agents/skills/<name>/SKILL.md`
+4. `.claude/skills/<name>/SKILL.md`
+5. `plugins/*/skills/<name>/SKILL.md` (marketplace format)
+
+Use the `path` field for explicit overrides when discovery fails.
+
+## Lockfile (agents.lock)
+
+Auto-generated TOML file. Pins exact commits and SHA-256 integrity hashes. Commit to version control.
+
+```toml
+version = 1
+
+[skills.find-bugs]
+source = "getsentry/skills"
+resolved_url = "https://github.com/getsentry/skills.git"
+resolved_path = "plugins/sentry-skills/skills/find-bugs"
+commit = "c8881564e75eff4faaecc82d1c3f13356851b6e7"
+integrity = "sha256-FWmCLdOj+x+XffiEg7Bx19drylVypeKz8me9OA757js="
+```
+
+## Links
+
+- Source: https://github.com/getsentry/dotagents
+- npm: https://www.npmjs.com/package/@sentry/dotagents
