@@ -1,9 +1,12 @@
 version = 1
 
-[[skills]]
-name = "find-bugs"
-source = "getsentry/skills"
+# check them in for easy reusability
+gitignore = false
+agents = ["claude", "cursor"]
+
+[trust]
+github_orgs = ["getsentry"]
 
 [[skills]]
-name = "warden-skill"
-source = "getsentry/warden"
+name = "*"
+source = "getsentry/skills"
