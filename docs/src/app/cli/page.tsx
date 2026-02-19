@@ -48,14 +48,7 @@ function CliCommand({
 export default function CliPage() {
   return (
     <>
-      <div className="page-header">
-        <h1>CLI Reference</h1>
-        <p>
-          All commands, flags, and options for the <code>dotagents</code> CLI.
-        </p>
-      </div>
-
-      <section className="section" id="usage">
+      <section className="section" id="usage" style={{ borderTop: "none" }}>
         <h2>Usage</h2>
         <pre>
           <code>dotagents [--user] &lt;command&gt; [options]</code>
