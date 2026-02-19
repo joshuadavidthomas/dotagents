@@ -161,6 +161,19 @@ agents = ["claude", "cursor"]
 | `vscode` | `.vscode` | `.vscode/mcp.json` | `.claude/settings.json` |
 | `opencode` | `.claude` | `opencode.json` | -- |
 
+### Pi
+
+[Pi](https://github.com/badlogic/pi-mono) discovers skills from `.pi/skills/`. It is not listed as an `agents` target, so instead add a symlink target to your `agents.toml`:
+
+```toml
+[symlinks]
+targets = [".pi"]
+```
+
+After running `dotagents install`, Pi will read skills from `.pi/skills/ -> .agents/skills/`.
+
+Pi does not use dotagents for MCP configuration. If you use an MCP extension with Pi, configure it separately via `.pi/mcp.json`.
+
 ## MCP Servers
 
 Declare MCP servers once in `agents.toml` and dotagents generates the correct config file for each agent during `install` and `sync`.
