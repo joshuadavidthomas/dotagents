@@ -4,7 +4,7 @@
 
 ```toml
 version = 1                     # Required, must be 1
-gitignore = false               # Optional, default false
+gitignore = false               # Optional, default true
 agents = ["claude", "cursor"]   # Optional, agent targets
 
 [project]                       # Optional
@@ -18,9 +18,9 @@ agents = ["claude", "cursor"]   # Optional, agent targets
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `version` | integer | Yes | — | Schema version, must be `1` |
-| `gitignore` | boolean | No | `false` | Generate `.agents/.gitignore` for managed skills |
-| `agents` | string[] | No | — | Agent targets: `claude`, `cursor`, `codex`, `vscode`, `opencode` |
+| `version` | integer | Yes | -- | Schema version, must be `1` |
+| `gitignore` | boolean | No | `true` | Generate `.agents/.gitignore` for managed skills. `init` sets this to `false`. |
+| `agents` | string[] | No | `[]` | Agent targets: `claude`, `cursor`, `codex`, `vscode`, `opencode` |
 
 ## Project Section
 
@@ -40,6 +40,8 @@ When `agents` is set, symlink targets are derived automatically. The `[symlinks]
 
 ## Skills Section
 
+### Regular Skills
+
 ```toml
 [[skills]]
 name = "find-bugs"              # Required, unique skill identifier
@@ -54,6 +56,23 @@ path = "tools/my-skill"         # Optional, subdirectory within repo
 | `source` | string | Yes | `owner/repo`, `owner/repo@ref`, `git:url`, or `path:relative` |
 | `ref` | string | No | Tag, branch, or commit SHA to pin |
 | `path` | string | No | Subdirectory containing the skill within the source repo |
+
+### Wildcard Skills
+
+```toml
+[[skills]]
+name = "*"                      # Wildcard: install all skills from source
+source = "getsentry/skills"     # Required
+ref = "v1.0.0"                  # Optional
+exclude = ["deprecated-skill"]  # Optional, skills to skip
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | literal `"*"` | Yes | Wildcard marker |
+| `source` | string | Yes | Same formats as regular skills |
+| `ref` | string | No | Tag, branch, or commit SHA to pin |
+| `exclude` | string[] | No | Skill names to skip. Default: `[]` |
 
 ## Trust Section
 
@@ -95,7 +114,6 @@ env = ["GITHUB_TOKEN"]             # Optional, env vars to pass through
 [[mcp]]
 name = "remote-api"                 # Required, unique server name
 url = "https://mcp.example.com/sse" # Required for HTTP
-headers = { Authorization = "Bearer tok" }  # Optional
 ```
 
 | Field | Type | Required | Description |
@@ -154,3 +172,4 @@ Local path skills have `source` and `integrity` only (no commit).
 | Variable | Purpose |
 |----------|---------|
 | `DOTAGENTS_STATE_DIR` | Override cache location (default: `~/.local/dotagents`) |
+| `DOTAGENTS_HOME` | Override user-scope location (default: `~/.agents`) |

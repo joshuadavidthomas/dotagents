@@ -36,6 +36,19 @@ path = "plugins/sentry-skills/skills/find-bugs"
 
 **Skill name rules:** Must start with alphanumeric, contain only `[a-zA-Z0-9._-]`.
 
+### Wildcard Skills
+
+Add all skills from a source with a single entry:
+
+```toml
+[[skills]]
+name = "*"
+source = "getsentry/skills"
+exclude = ["deprecated-skill"]
+```
+
+During `install` and `update`, dotagents discovers all skills in the source and installs each one (except those in `exclude`). Each skill gets its own lockfile entry. Use `dotagents add <source> --all` to create a wildcard entry from the CLI.
+
 ## Trust
 
 Restrict which sources are allowed. Without a `[trust]` section, all sources are allowed.
@@ -57,6 +70,7 @@ git_domains = ["git.corp.example.com"]
 - GitHub sources match against `github_orgs` (by owner) or `github_repos` (exact owner/repo)
 - Git URL sources match against `git_domains`
 - Local `path:` sources are always allowed
+- A source passes if it matches any rule (org OR repo OR domain)
 
 Trust is validated before any network operations in `add` and `install`.
 
@@ -72,19 +86,18 @@ command = "npx"
 args = ["-y", "@modelcontextprotocol/server-github"]
 env = ["GITHUB_TOKEN"]
 
-# HTTP transport
+# HTTP transport (OAuth)
 [[mcp]]
 name = "remote-api"
 url = "https://mcp.example.com/sse"
-headers = { Authorization = "Bearer tok" }
 ```
 
 MCP configs are written per-agent in the appropriate format:
 - Claude: `.mcp.json` (JSON)
 - Cursor: `.cursor/mcp.json` (JSON)
-- Codex: `.codex/config.toml` (TOML)
+- Codex: `.codex/config.toml` (TOML, shared with other Codex config)
 - VS Code: `.vscode/mcp.json` (JSON)
-- OpenCode: `opencode.json` (JSON)
+- OpenCode: `opencode.json` (JSON, shared)
 
 ## Hooks
 
@@ -100,9 +113,16 @@ command = "my-lint-check"
 **Supported events:** `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`
 
 Hook configs are written per-agent:
-- Claude: `.claude/settings.json` (merged into existing)
-- Cursor: `.cursor/hooks.json` (dedicated file)
-- Others: Not currently supported
+- Claude: `.claude/settings.json` (merged into existing file)
+- Cursor: `.cursor/hooks.json` (dedicated file, events mapped to Cursor equivalents)
+- VS Code: `.claude/settings.json` (same file as Claude)
+- Codex/OpenCode: not supported (warnings emitted during install/sync)
+
+**Cursor event mapping:**
+- `PreToolUse` -> `beforeShellExecution` + `beforeMCPExecution`
+- `PostToolUse` -> `afterFileEdit`
+- `UserPromptSubmit` -> `beforeSubmitPrompt`
+- `Stop` -> `stop`
 
 ## Agents
 
@@ -113,15 +133,35 @@ agents = ["claude", "cursor", "codex", "vscode", "opencode"]
 ```
 
 Each agent gets:
-- A `<agent-dir>/skills/` symlink pointing to `.agents/skills/`
-- MCP server configs written to the agent's config file
+- A `<agent-dir>/skills/` symlink pointing to `.agents/skills/` (Claude, Cursor)
+- Or native discovery from `.agents/skills/` (Codex, VS Code, OpenCode)
+- MCP server configs in the agent's config file
 - Hook configs (where supported)
+
+## Scopes
+
+### Project Scope (default)
+
+Operates on the current project. Requires `agents.toml` at the project root.
+
+### User Scope (`--user`)
+
+Operates on `~/.agents/` for skills shared across all projects. Override with `DOTAGENTS_HOME`.
+
+```bash
+dotagents --user init
+dotagents --user add getsentry/skills --all
+```
+
+User-scope symlinks go to `~/.claude/skills/` and `~/.cursor/skills/`.
+
+When no `agents.toml` exists and you're not inside a git repo, dotagents falls back to user scope automatically.
 
 ## Gitignore
 
-When `gitignore = true`, dotagents generates `.agents/.gitignore` listing managed (remote) skills. In-place skills (`path:.agents/skills/...`) are never gitignored since they must be tracked in git.
+When `gitignore = true` (schema default), dotagents generates `.agents/.gitignore` listing managed (remote) skills. In-place skills (`path:.agents/skills/...`) are never gitignored since they must be tracked in git.
 
-When `gitignore = false` (default for `init`), no gitignore is created — skills are checked into the repository.
+When `gitignore = false` (set by `init`), no gitignore is created -- skills are checked into the repository. Anyone cloning gets skills without running `install`.
 
 ## Caching
 
@@ -141,5 +181,5 @@ When `gitignore = false` (default for `init`), no gitignore is created — skill
 - Run `dotagents sync` to repair
 
 **Integrity mismatch:**
-- Skill was modified locally — run `dotagents install --force` to restore
+- Skill was modified locally -- run `dotagents install --force` to restore
 - Or run `dotagents sync` to detect and report issues

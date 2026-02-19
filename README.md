@@ -6,9 +6,11 @@ A package manager for `.agents` directories. Declare agent skill dependencies in
 
 **One source of truth.** Skills live in `.agents/skills/` and symlink into `.claude/skills/`, `.cursor/skills/`, or wherever your tools expect them. No copy-pasting between directories.
 
-**Reproducible.** `agents.lock` pins exact commits and integrity hashes. `npx @sentry/dotagents install --frozen` in CI guarantees everyone runs the same skills.
+**Reproducible.** `agents.lock` pins exact commits and integrity hashes. `dotagents install --frozen` in CI guarantees everyone runs the same skills.
 
 **Shareable.** Skills are just directories with a `SKILL.md`. Host them in any git repo, discover them automatically, install with one command.
+
+**Multi-agent.** Configure Claude, Cursor, Codex, VS Code, and OpenCode from a single `agents.toml` -- skills, MCP servers, and hooks.
 
 ## Quick Start
 
@@ -18,6 +20,9 @@ npx @sentry/dotagents init
 
 # Add a skill from a GitHub repo
 npx @sentry/dotagents add getsentry/skills --name find-bugs
+
+# Or add all skills from a repo
+npx @sentry/dotagents add getsentry/skills --all
 
 # Install all declared skills
 npx @sentry/dotagents install
@@ -49,12 +54,70 @@ And a lockfile (`agents.lock`) pinning the exact commit and integrity hash.
 | `list` | Show installed skills and their status |
 | `sync` | Reconcile gitignore, symlinks, and verify state |
 
+All commands accept `--user` to operate on user scope (`~/.agents/`) instead of the current project.
+
+### init
+
+```bash
+dotagents init [--agents claude,cursor] [--force]
+```
+
+Interactive mode prompts for agent targets, gitignore preference, and trust policy.
+
+### install
+
+```bash
+dotagents install [--frozen] [--force]
+```
+
+Use `--frozen` in CI to fail if the lockfile is missing or out of sync. Use `--force` to re-resolve everything from scratch.
+
+### add
+
+```bash
+dotagents add <source> [--name <name>] [--ref <ref>] [--all]
+```
+
+Add a skill and install it. When a repo has one skill, it's added automatically. When multiple are found, use `--name` to pick one or `--all` to add them all as a wildcard entry.
+
+### remove
+
+```bash
+dotagents remove <name>
+```
+
+For wildcard-sourced skills, adds the skill to the `exclude` list instead of removing the whole entry.
+
+### update
+
+```bash
+dotagents update [name]
+```
+
+Fetches latest versions. Skips SHA-pinned refs. For wildcards, re-discovers all skills and adds or removes as needed. Prints a changelog.
+
+### list
+
+```bash
+dotagents list [--json]
+```
+
+Status indicators: `✓` ok, `~` modified, `✗` missing, `?` unlocked.
+
+### sync
+
+```bash
+dotagents sync
+```
+
+Adopts orphaned skills, regenerates gitignore, verifies integrity, repairs symlinks and configs.
+
 ## Source Formats
 
 ```toml
 [[skills]]
 name = "find-bugs"
-source = "getsentry/skills"              # GitHub repo (auto-discover)
+source = "getsentry/skills"              # GitHub repo
 
 [[skills]]
 name = "review"
@@ -69,23 +132,40 @@ name = "local"
 source = "path:./my-skills/local-skill"   # Local directory
 ```
 
+## Wildcard Skills
+
+Add all skills from a repo with a single entry. Use `exclude` to skip specific ones.
+
+```toml
+[[skills]]
+name = "*"
+source = "getsentry/skills"
+exclude = ["deprecated-skill"]
+```
+
+Or from the CLI: `dotagents add getsentry/skills --all`
+
 ## Agent Targets
 
-The `agents` field tells dotagents which tools to configure. It handles skills symlinks, MCP config files, and hook config files for each agent.
+The `agents` field tells dotagents which tools to configure.
 
 ```toml
 agents = ["claude", "cursor"]
 ```
 
-Supported agents: `claude`, `cursor`, `codex`, `vscode`, `opencode`.
+| Agent | Config Dir | MCP Config | Hooks |
+|-------|-----------|------------|-------|
+| `claude` | `.claude` | `.mcp.json` | `.claude/settings.json` |
+| `cursor` | `.cursor` | `.cursor/mcp.json` | `.cursor/hooks.json` |
+| `codex` | `.codex` | `.codex/config.toml` | -- |
+| `vscode` | `.vscode` | `.vscode/mcp.json` | `.claude/settings.json` |
+| `opencode` | `.claude` | `opencode.json` | -- |
 
 ## MCP Servers
 
 Declare MCP servers once in `agents.toml` and dotagents generates the correct config file for each agent during `install` and `sync`.
 
 ```toml
-agents = ["claude", "cursor"]
-
 # Stdio transport
 [[mcp]]
 name = "github"
@@ -93,22 +173,19 @@ command = "npx"
 args = ["-y", "@modelcontextprotocol/server-github"]
 env = ["GITHUB_TOKEN"]
 
-# HTTP transport
+# HTTP transport (OAuth)
 [[mcp]]
 name = "remote-api"
 url = "https://mcp.example.com/sse"
-headers = { Authorization = "Bearer tok" }
 ```
 
-Each server uses either `command` (stdio) or `url` (HTTP), not both. The `env` field lists environment variable names to pass through from the user's environment.
+Each server uses either `command` (stdio) or `url` (HTTP), not both.
 
 ## Hooks
 
-Declare hooks once in `agents.toml` and dotagents writes the correct hook config for each agent that supports them.
+Declare hooks once and dotagents writes the correct hook config for each agent that supports them (Claude, Cursor, VS Code).
 
 ```toml
-agents = ["claude"]
-
 [[hooks]]
 event = "PreToolUse"
 matcher = "Bash"
@@ -119,11 +196,31 @@ event = "Stop"
 command = "notify-done"
 ```
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `event` | Yes | `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, or `Stop` |
-| `matcher` | No | Filter to specific tool names (e.g. `Bash`, `Write`) |
-| `command` | Yes | Shell command to run when the hook fires |
+Supported events: `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`.
+
+## Trust
+
+Restrict which skill sources are allowed by adding a `[trust]` section. Without it, all sources are allowed.
+
+```toml
+[trust]
+github_orgs = ["getsentry"]
+github_repos = ["external-org/specific-repo"]
+git_domains = ["git.corp.example.com"]
+```
+
+Local `path:` sources are always allowed.
+
+## User Scope
+
+Use `--user` to manage skills shared across all projects:
+
+```bash
+dotagents --user init
+dotagents --user add getsentry/skills --all
+```
+
+User-scope files live in `~/.agents/` (override with `DOTAGENTS_HOME`).
 
 ## How It Works
 
@@ -136,9 +233,9 @@ command = "notify-done"
 
 ## Checking In Skills
 
-By default, `init` sets `gitignore = false` so installed skills are committed to git. This means anyone cloning the repo gets skills immediately — they only need dotagents when adding or updating skills.
+By default, `init` sets `gitignore = false` so installed skills are committed to git. Anyone cloning the repo gets skills immediately -- they only need dotagents when adding or updating skills.
 
-To gitignore managed skills instead (collaborators must run `install`), set `gitignore = true` in `agents.toml` or remove the field entirely (it defaults to `true` when absent for backward compatibility).
+To gitignore managed skills instead, set `gitignore = true` in `agents.toml`. Collaborators must run `dotagents install` after cloning.
 
 ## Contributing
 

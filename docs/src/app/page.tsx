@@ -11,24 +11,6 @@ function Terminal({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CommandCard({
-  name,
-  synopsis,
-  children,
-}: {
-  name: string;
-  synopsis: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="command-card">
-      <h3>{name}</h3>
-      <div className="synopsis">{synopsis}</div>
-      <p>{children}</p>
-    </div>
-  );
-}
-
 export default function Home() {
   return (
     <>
@@ -39,7 +21,7 @@ export default function Home() {
           for reproducibility, and let every tool discover skills from one place.
         </p>
         <div className="cta-buttons">
-          <a href="#quick-start" className="btn btn-primary">
+          <a href="/cli" className="btn btn-primary">
             Get Started
           </a>
           <a
@@ -89,71 +71,137 @@ export default function Home() {
 
       <section className="steps" id="quick-start">
         <h2>Quick Start</h2>
+        <p>
+          Run <code>init</code> to set up a new project. The interactive TUI
+          walks you through selecting agents, gitignore preference, and trust
+          policy.
+        </p>
+        <Terminal>
+          <pre>
+            <code className="cli">
+              <span className="cli-dim">$</span> npx @sentry/dotagents init
+            </code>
+          </pre>
+        </Terminal>
+      </section>
 
-        <div className="step">
-          <h3>Initialize</h3>
-          <p>Create an agents.toml and .agents/ directory in your project.</p>
-          <Terminal>
-            <pre>
-              <code className="cli">
-                <span className="cli-dim">$</span> npx @sentry/dotagents init
-                --agents claude{"\n\n"}
-                <span className="cli-green">Created</span> agents.toml{"\n"}
-                <span className="cli-green">Created</span> .agents/skills/
-                {"\n"}
-                <span className="cli-green">Created</span> symlink:
-                .claude/skills/ → .agents/skills/{"\n\n"}
-                <span className="cli-bold">Next steps:</span>
-                {"\n"}
-                {"  "}1. Add skills:{" "}
-                <span className="cli-cyan">
-                  dotagents add getsentry/skills --name find-bugs
-                </span>
-                {"\n"}
-                {"  "}2. Install:{" "}
-                <span className="cli-cyan">dotagents install</span>
-              </code>
-            </pre>
-          </Terminal>
-        </div>
+      <section className="section" id="agents">
+        <h2>Supported Agents</h2>
+        <p>
+          The <code>agents</code> array tells dotagents which tools to
+          configure. Each agent gets skill symlinks, MCP server configs, and
+          hook configs.
+        </p>
+        <pre>
+          <code>agents = [&quot;claude&quot;, &quot;cursor&quot;]</code>
+        </pre>
+        <table>
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th>Config Dir</th>
+              <th>MCP Config</th>
+              <th>Hooks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <code>claude</code>
+              </td>
+              <td>
+                <code>.claude</code>
+              </td>
+              <td>
+                <code>.mcp.json</code>
+              </td>
+              <td>
+                <code>.claude/settings.json</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>cursor</code>
+              </td>
+              <td>
+                <code>.cursor</code>
+              </td>
+              <td>
+                <code>.cursor/mcp.json</code>
+              </td>
+              <td>
+                <code>.cursor/hooks.json</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>codex</code>
+              </td>
+              <td>
+                <code>.codex</code>
+              </td>
+              <td>
+                <code>.codex/config.toml</code>
+              </td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>
+                <code>vscode</code>
+              </td>
+              <td>
+                <code>.vscode</code>
+              </td>
+              <td>
+                <code>.vscode/mcp.json</code>
+              </td>
+              <td>
+                <code>.claude/settings.json</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>opencode</code>
+              </td>
+              <td>
+                <code>.claude</code>
+              </td>
+              <td>
+                <code>opencode.json</code>
+              </td>
+              <td>--</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
-        <div className="step">
-          <h3>Add a skill</h3>
-          <p>Install a skill from any GitHub repo.</p>
-          <Terminal>
-            <pre>
-              <code className="cli">
-                <span className="cli-dim">$</span> npx @sentry/dotagents add
-                getsentry/skills --name find-bugs{"\n\n"}
-                <span className="cli-green">✓</span>{" "}
-                <span className="cli-bold">find-bugs</span>{" "}
-                <span className="cli-dim">added from</span> getsentry/skills
-                {"\n"}
-                <span className="cli-dim">  commit</span> c888156{"\n"}
-                <span className="cli-dim">  integrity</span>{" "}
-                sha256-FWmCLd...
-              </code>
-            </pre>
-          </Terminal>
-        </div>
+      <section className="section" id="adding-skills">
+        <h2>Adding Skills</h2>
+        <p>
+          Use <code>dotagents add</code> to install skills from GitHub repos,
+          git URLs, or local directories.
+        </p>
+        <pre>
+          <code>{`# Add a single skill from a GitHub repo
+dotagents add getsentry/skills --name find-bugs
 
-        <div className="step">
-          <h3>That&apos;s it</h3>
-          <p>
-            Your <code>agents.toml</code> now declares the dependency, and{" "}
-            <code>agents.lock</code> pins it.
-          </p>
-          <Terminal>
-            <pre>
-              <code className="cli">
-                <span className="cli-dim"># agents.toml</span>
-                {"\n"}version = 1{"\n"}agents = [&quot;claude&quot;]{"\n\n"}
-                [[skills]]{"\n"}name = &quot;find-bugs&quot;{"\n"}source =
-                &quot;getsentry/skills&quot;
-              </code>
-            </pre>
-          </Terminal>
-        </div>
+# Add all skills from a repo
+dotagents add getsentry/skills --all
+
+# Pin to a specific version
+dotagents add getsentry/warden@v1.0.0
+
+# From a non-GitHub git server
+dotagents add git:https://git.corp.dev/team/skills --name review
+
+# From a local directory
+dotagents add path:./my-skills/custom`}</code>
+        </pre>
+        <p>
+          When a repo has one skill, it is added automatically. When multiple
+          are found, use <code>--name</code> to pick one or{" "}
+          <code>--all</code> to add them all as a wildcard entry.
+        </p>
       </section>
 
       <section className="section" id="source-formats">
@@ -207,159 +255,57 @@ export default function Home() {
         </table>
       </section>
 
-      <section className="section" id="commands">
-        <h2>Commands</h2>
-        <CommandCard name="init" synopsis="dotagents init [--agents claude,cursor] [--force]">
-          Initialize a new project with <code>agents.toml</code> and{" "}
-          <code>.agents/skills/</code>. Interactive mode prompts for agent
-          targets, gitignore preference, and trust policy.
-        </CommandCard>
-        <CommandCard name="install" synopsis="dotagents install [--frozen] [--force]">
-          Install all skill dependencies. Use <code>--frozen</code> in CI to
-          fail if the lockfile is out of sync.
-        </CommandCard>
-        <CommandCard name="add" synopsis="dotagents add <source> [--name <name>] [--ref <ref>]">
-          Add a skill dependency and install it. Auto-discovers skills in the
-          repo, or use <code>--name</code> to pick one.
-        </CommandCard>
-        <CommandCard name="remove" synopsis="dotagents remove <name>">
-          Remove a skill from <code>agents.toml</code>, delete from disk, and
-          update the lockfile.
-        </CommandCard>
-        <CommandCard name="update" synopsis="dotagents update [name]">
-          Update skills to their latest versions. Prints a changelog showing old
-          and new commits.
-        </CommandCard>
-        <CommandCard name="sync" synopsis="dotagents sync">
-          Reconcile project state: repair symlinks, verify integrity, adopt
-          orphaned skills, regenerate configs.
-        </CommandCard>
-        <CommandCard name="list" synopsis="dotagents list [--json]">
-          Show installed skills with status indicators: <code>✓</code> ok,{" "}
-          <code>~</code> modified, <code>✗</code> missing, <code>?</code>{" "}
-          unlocked.
-        </CommandCard>
-      </section>
-
-      <section className="section" id="agents">
-        <h2>Agent Targets</h2>
+      <section className="section" id="configuration">
+        <h2>Configuration</h2>
         <p>
-          The <code>agents</code> array tells dotagents which tools to
-          configure. Each agent gets skill symlinks, MCP server configs, and hook
-          configs.
+          Full <code>agents.toml</code> example with skills, wildcards, MCP
+          servers, and hooks:
         </p>
         <pre>
-          <code>agents = [&quot;claude&quot;, &quot;cursor&quot;]</code>
-        </pre>
-        <table>
-          <thead>
-            <tr>
-              <th>Agent</th>
-              <th>Config Dir</th>
-              <th>MCP Config</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <code>claude</code>
-              </td>
-              <td>
-                <code>.claude</code>
-              </td>
-              <td>
-                <code>.mcp.json</code>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <code>cursor</code>
-              </td>
-              <td>
-                <code>.cursor</code>
-              </td>
-              <td>
-                <code>.cursor/mcp.json</code>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <code>codex</code>
-              </td>
-              <td>
-                <code>.codex</code>
-              </td>
-              <td>
-                <code>.codex/config.toml</code>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <code>vscode</code>
-              </td>
-              <td>
-                <code>.vscode</code>
-              </td>
-              <td>
-                <code>.vscode/mcp.json</code>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <code>opencode</code>
-              </td>
-              <td>
-                <code>.claude</code>
-              </td>
-              <td>
-                <code>opencode.json</code>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+          <code>{`version = 1
+gitignore = false
+agents = ["claude", "cursor"]
 
-      <section className="section" id="mcp">
-        <h2>MCP Servers</h2>
-        <p>
-          Declare MCP servers once in <code>agents.toml</code> and dotagents
-          generates the correct config file for each agent.
-        </p>
-        <pre>
-          <code>{`# Stdio transport
+[trust]
+github_orgs = ["getsentry"]
+
+# Individual skill
+[[skills]]
+name = "find-bugs"
+source = "getsentry/skills"
+
+# Pinned to a ref
+[[skills]]
+name = "warden-skill"
+source = "getsentry/warden@v1.0.0"
+
+# Wildcard: all skills from a repo
+[[skills]]
+name = "*"
+source = "myorg/skills"
+exclude = ["deprecated-skill"]
+
+# MCP server (stdio)
 [[mcp]]
 name = "github"
 command = "npx"
 args = ["-y", "@modelcontextprotocol/server-github"]
 env = ["GITHUB_TOKEN"]
 
-# HTTP transport
+# MCP server (HTTP with OAuth)
 [[mcp]]
 name = "remote-api"
 url = "https://mcp.example.com/sse"
-headers = { Authorization = "Bearer tok" }`}</code>
-        </pre>
-      </section>
 
-      <section className="section" id="hooks">
-        <h2>Hooks</h2>
-        <p>
-          Declare hooks once and dotagents writes the correct hook config for
-          each agent that supports them.
-        </p>
-        <pre>
-          <code>{`[[hooks]]
+# Hooks
+[[hooks]]
 event = "PreToolUse"
 matcher = "Bash"
-command = "my-lint-check"
-
-[[hooks]]
-event = "Stop"
-command = "notify-done"`}</code>
+command = "my-lint-check"`}</code>
         </pre>
         <p>
-          Supported events: <code>PreToolUse</code>, <code>PostToolUse</code>,{" "}
-          <code>UserPromptSubmit</code>, <code>Stop</code>.
+          See the <a href="/cli">CLI reference</a> for all commands and flags,
+          or the <a href="/security">Security page</a> for trust configuration.
         </p>
       </section>
     </>

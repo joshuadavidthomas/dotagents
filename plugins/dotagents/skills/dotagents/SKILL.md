@@ -1,9 +1,9 @@
 ---
 name: dotagents
-description: Manage agent skill dependencies with dotagents. Use when asked to "add a skill", "install skills", "remove a skill", "update skills", "dotagents init", "agents.toml", "agents.lock", "sync skills", "list skills", "set up dotagents", "configure trust", "add MCP server", "add hook", or any dotagents-related task.
+description: Manage agent skill dependencies with dotagents. Use when asked to "add a skill", "install skills", "remove a skill", "update skills", "dotagents init", "agents.toml", "agents.lock", "sync skills", "list skills", "set up dotagents", "configure trust", "add MCP server", "add hook", "wildcard skills", "user scope", or any dotagents-related task.
 ---
 
-Manage agent skill dependencies declared in `agents.toml`. dotagents resolves, installs, and symlinks skills so multiple agent tools (Claude Code, Cursor, Codex, etc.) discover them from `.agents/skills/`.
+Manage agent skill dependencies declared in `agents.toml`. dotagents resolves, installs, and symlinks skills so multiple agent tools (Claude Code, Cursor, Codex, VS Code, OpenCode) discover them from `.agents/skills/`.
 
 ## References
 
@@ -12,7 +12,7 @@ Read the relevant reference when the task requires deeper detail:
 | Document | Read When |
 |----------|-----------|
 | [references/cli-reference.md](references/cli-reference.md) | Full command options, flags, examples |
-| [references/configuration.md](references/configuration.md) | Editing agents.toml, source formats, trust, MCP, hooks |
+| [references/configuration.md](references/configuration.md) | Editing agents.toml, source formats, trust, MCP, hooks, wildcards, scopes |
 | [references/config-schema.md](references/config-schema.md) | Exact field names, types, and defaults |
 
 ## Quick Start
@@ -22,7 +22,10 @@ Read the relevant reference when the task requires deeper detail:
 dotagents init
 
 # Add a skill from GitHub
-dotagents add getsentry/skills
+dotagents add getsentry/skills --name find-bugs
+
+# Add all skills from a repo
+dotagents add getsentry/skills --all
 
 # Add a pinned skill
 dotagents add getsentry/warden@v1.0.0
@@ -46,6 +49,8 @@ dotagents list
 | `dotagents sync` | Reconcile state (adopt orphans, repair symlinks, verify integrity) |
 | `dotagents list` | Show installed skills and their status |
 
+All commands accept `--user` to operate on user scope (`~/.agents/`) instead of the current project.
+
 For full options and flags, read [references/cli-reference.md](references/cli-reference.md).
 
 ## Source Formats
@@ -61,6 +66,8 @@ For full options and flags, read [references/cli-reference.md](references/cli-re
 
 - **`.agents/skills/`** is the canonical home for all installed skills
 - **`agents.toml`** declares dependencies; **`agents.lock`** pins exact commits and integrity hashes
-- **Symlinks**: `.claude/skills/`, `.cursor/skills/`, etc. point to `.agents/skills/`
+- **Symlinks**: `.claude/skills/`, `.cursor/skills/` point to `.agents/skills/`
+- **Wildcards**: `name = "*"` installs all skills from a source, with optional `exclude` list
 - **Trust**: Optional `[trust]` section restricts which sources are allowed
 - **Gitignore**: When `gitignore = true`, managed skills are gitignored; custom in-place skills are tracked
+- **User scope**: `--user` flag manages skills in `~/.agents/` shared across all projects
