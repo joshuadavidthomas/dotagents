@@ -8,15 +8,7 @@ export const metadata: Metadata = {
 export default function SecurityPage() {
   return (
     <>
-      <div className="page-header">
-        <h1>Security</h1>
-        <p>
-          How dotagents handles trust, integrity verification, and supply chain
-          safety for agent skills.
-        </p>
-      </div>
-
-      <section className="section" id="trust">
+      <section className="section" id="trust" style={{ borderTop: "none" }}>
         <h2>Trust Policies</h2>
         <p>
           The <code>[trust]</code> section in <code>agents.toml</code> controls
