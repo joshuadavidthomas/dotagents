@@ -27,7 +27,23 @@ export async function clone(
     await exec("git", args);
   } catch (err) {
     if (err instanceof ExecError) {
-      throw new GitError(`Failed to clone ${url}: ${err.stderr}`);
+      const stderr = err.stderr;
+      if (
+        url.startsWith("https://github.com/") &&
+        (/terminal prompts disabled/i.test(stderr) ||
+          /could not read Username/i.test(stderr))
+      ) {
+        // Convert https://github.com/org/repo[.git][/] → git@github.com:org/repo.git
+        let path = url.slice("https://github.com/".length);
+        while (path.endsWith("/")) path = path.slice(0, -1);
+        const sshUrl = "git@github.com:" + (path.endsWith(".git") ? path : path + ".git");
+        throw new GitError(
+          `Failed to clone ${url}: authentication required.\n` +
+            `Hint: for private repos, use the SSH URL instead:\n` +
+            `  dotagents add ${sshUrl}`,
+        );
+      }
+      throw new GitError(`Failed to clone ${url}: ${stderr}`);
     }
     throw err;
   }
